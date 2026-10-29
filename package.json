@@ -1,0 +1,13 @@
+{
+  "name": "rotulo-certo",
+  "version": "1.0.0",
+  "private": true,
+  "type": "module",
+  "description": "Nota de 0 a 10 para alimentos conforme a sua meta nutricional",
+  "scripts": {
+    "start": "node server.js"
+  },
+  "engines": {
+    "node": ">=18"
+  }
+}

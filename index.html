@@ -1,0 +1,754 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0}img{max-width:100%}[hidden]{display:none!important}</style>
+</head>
+<body>
+<title>Rótulo Certo</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,800&family=Figtree:wght@400;500;600;700&family=Archivo:wght@500;700;800&display=swap">
+<style>
+/* Layout: uma coluna estreita de app de celular; abas Analisar / Perfil; resultado com nota, selos estilo "lupa" da Anvisa e tabela nutricional comparada à meta */
+:root{
+  --bg:#F3F5EF; --surface:#FFFFFF; --ink:#16201A; --muted:#5D6A60; --line:#D9DED4;
+  --accent:#2C7A4B; --accent-ink:#FFFFFF; --accent-soft:#E2F0E6;
+  --good:#2C7A4B; --mid:#B7791F; --bad:#C2412D; --bad-soft:#FBE7E3; --mid-soft:#FBF0DC;
+  --lupa-bg:#111111; --lupa-fg:#FFFFFF;
+  --f-display:"Bricolage Grotesque",ui-sans-serif,system-ui,sans-serif;
+  --f-body:"Figtree",ui-sans-serif,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --f-label:"Archivo","Arial Narrow",Arial,sans-serif;
+}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){
+  --bg:#101512; --surface:#18201B; --ink:#E8EEE8; --muted:#9AA79D; --line:#2C3830;
+  --accent:#5DBB82; --accent-ink:#0D1A12; --accent-soft:#1D3326;
+  --good:#5DBB82; --mid:#E0A64A; --bad:#F07A63; --bad-soft:#3A1F1A; --mid-soft:#352A16;
+  --lupa-bg:#F2F2F2; --lupa-fg:#111111; color-scheme:dark}}
+:root[data-theme="dark"]{
+  --bg:#101512; --surface:#18201B; --ink:#E8EEE8; --muted:#9AA79D; --line:#2C3830;
+  --accent:#5DBB82; --accent-ink:#0D1A12; --accent-soft:#1D3326;
+  --good:#5DBB82; --mid:#E0A64A; --bad:#F07A63; --bad-soft:#3A1F1A; --mid-soft:#352A16;
+  --lupa-bg:#F2F2F2; --lupa-fg:#111111; color-scheme:dark}
+*{box-sizing:border-box}
+html,body{background:var(--bg);color:var(--ink)}
+body{font-family:var(--f-body);font-size:15px;line-height:1.5;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 40px}
+.wrap{max-width:560px;margin:0 auto;display:flex;flex-direction:column;gap:18px}
+header.top{display:flex;align-items:center;justify-content:space-between;gap:12px;padding-top:18px;flex-wrap:wrap}
+.brand{display:flex;align-items:center;gap:10px}
+.brand h1{font-family:var(--f-display);font-weight:800;font-size:1.55rem;letter-spacing:-.02em;margin:0;line-height:1}
+.brand small{display:block;color:var(--muted);font-size:.8rem;margin-top:3px}
+.tabs{display:flex;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tabs a{font-weight:600;font-size:.88rem;text-decoration:none;color:var(--muted);padding:7px 14px;border-radius:999px}
+.tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
+.tabs a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,label.btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+section.panel{display:flex;flex-direction:column;gap:16px}
+.card{background:var(--surface);border:1px solid var(--line);border-radius:14px;padding:16px}
+h2{font-family:var(--f-display);font-weight:600;font-size:1.15rem;margin:0;text-wrap:balance}
+h3{font-family:var(--f-label);font-weight:700;font-size:.75rem;text-transform:uppercase;letter-spacing:.08em;margin:0;color:var(--muted)}
+p{margin:0}
+.muted{color:var(--muted)}
+.small{font-size:.84rem}
+/* entradas */
+.inputs{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.btn{display:inline-flex;align-items:center;justify-content:center;gap:8px;font:600 .92rem var(--f-body);border-radius:10px;border:1px solid var(--line);background:var(--surface);color:var(--ink);padding:11px 14px;cursor:pointer;text-align:center}
+.btn:hover{border-color:var(--ink)}
+.btn.primary{background:var(--accent);border-color:var(--accent);color:var(--accent-ink)}
+.btn[disabled]{opacity:.55;cursor:default}
+.btn.big{flex-direction:column;padding:16px 10px;gap:6px;min-height:92px}
+.btn.big svg{width:26px;height:26px}
+.btn.big span.sub{font-weight:400;font-size:.78rem;color:inherit;opacity:.8}
+label.btn input{position:absolute;width:1px;height:1px;opacity:0}
+.row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
+.row > *{min-width:0}
+input[type=text],input[type=number],select{font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%}
+.field{display:flex;flex-direction:column;gap:4px}
+.field span{font-size:.78rem;font-weight:600;color:var(--muted)}
+.grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
+.chips{display:flex;gap:8px;flex-wrap:wrap}
+.chip{font:600 .82rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
+.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.status{font-size:.88rem;padding:10px 12px;border-radius:10px;background:var(--mid-soft)}
+.status.err{background:var(--bad-soft)}
+.status.ok{background:var(--accent-soft)}
+/* resultado */
+.result-head{display:grid;grid-template-columns:auto 1fr;gap:16px;align-items:center}
+.dial{--v:0;--c:var(--good);width:96px;height:96px;border-radius:50%;
+  background:conic-gradient(var(--c) calc(var(--v)*36deg),var(--line) 0);display:grid;place-items:center}
+.dial div{width:76px;height:76px;border-radius:50%;background:var(--surface);display:grid;place-items:center;text-align:center}
+.dial b{font-family:var(--f-display);font-weight:800;font-size:2rem;line-height:1;font-variant-numeric:tabular-nums}
+.dial small{display:block;font-size:.7rem;color:var(--muted);margin-top:2px}
+.verdict{font-family:var(--f-display);font-weight:600;font-size:1.1rem;line-height:1.3;text-wrap:balance}
+.prodname{font-weight:700;font-size:.95rem}
+.tag-ex{font:700 .68rem var(--f-label);text-transform:uppercase;letter-spacing:.08em;background:var(--mid-soft);color:var(--ink);border-radius:5px;padding:2px 6px;vertical-align:2px;margin-left:4px}
+.lupas{display:flex;flex-wrap:wrap;gap:8px}
+.lupa{display:inline-flex;align-items:center;gap:8px;background:var(--lupa-bg);color:var(--lupa-fg);border-radius:4px;padding:6px 10px 6px 8px;font:800 .78rem/1.1 var(--f-label);text-transform:uppercase;letter-spacing:.02em}
+.lupa svg{width:20px;height:20px;flex:none}
+.warn{display:flex;gap:10px;align-items:flex-start;background:var(--bad-soft);border-radius:10px;padding:10px 12px;font-size:.9rem;font-weight:500}
+.procon{display:grid;grid-template-columns:1fr 1fr;gap:12px}
+.procon ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
+.procon li{display:grid;grid-template-columns:18px 1fr;gap:6px;font-size:.88rem;line-height:1.35}
+.procon li::before{font-weight:800;text-align:center}
+.pros li::before{content:"+";color:var(--good)}
+.cons li::before{content:"−";color:var(--bad)}
+.procon .none{color:var(--muted);font-size:.85rem}
+/* tabela nutricional */
+.tabela{border:2px solid var(--ink);border-radius:2px;font-family:var(--f-label);font-size:.82rem}
+.tabela .tt{font-weight:800;font-size:.95rem;padding:6px 8px;border-bottom:2px solid var(--ink)}
+.tabela table{width:100%;border-collapse:collapse;font-variant-numeric:tabular-nums}
+.tabela th,.tabela td{padding:5px 8px;border-bottom:1px solid var(--ink);text-align:right;font-weight:500}
+.tabela th:first-child,.tabela td:first-child{text-align:left}
+.tabela thead th{font-weight:700;font-size:.72rem}
+.tabela tr:last-child td{border-bottom:0}
+.tabela td.ind{padding-left:20px}
+.tabela .hi{font-weight:800}
+.tablewrap{overflow-x:auto}
+.hist{display:flex;flex-direction:column;gap:6px}
+.hist button{display:grid;grid-template-columns:36px 1fr auto;gap:10px;align-items:center;text-align:left;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:500 .9rem var(--f-body);color:var(--ink);cursor:pointer}
+.hist .n{font-family:var(--f-display);font-weight:800;font-size:1.1rem;text-align:center;font-variant-numeric:tabular-nums}
+.hist .d{color:var(--muted);font-size:.78rem}
+.targets{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.targets div{background:var(--bg);border-radius:10px;padding:10px}
+.targets b{display:block;font-family:var(--f-display);font-size:1.2rem;font-variant-numeric:tabular-nums}
+.targets span{font-size:.75rem;color:var(--muted)}
+details summary{cursor:pointer;font-weight:600}
+.foot{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
+@media (max-width:420px){.procon,.grid3{grid-template-columns:1fr 1fr}.procon{grid-template-columns:1fr}.targets{grid-template-columns:1fr 1fr}}
+@media (prefers-reduced-motion:no-preference){.dial{transition:background .4s}}
+</style>
+
+<div class="wrap">
+  <header class="top">
+    <div class="brand">
+      <svg width="34" height="34" viewBox="0 0 34 34" aria-hidden="true"><rect x="1" y="1" width="32" height="32" rx="8" fill="var(--accent)"/><path d="M8 11h4M8 15h18M8 19h18M8 23h11" stroke="var(--accent-ink)" stroke-width="2.2" stroke-linecap="round"/><circle cx="24" cy="23" r="3" fill="none" stroke="var(--accent-ink)" stroke-width="2"/></svg>
+      <div><h1>Rótulo Certo</h1><small>O produto combina com a sua meta?</small></div>
+    </div>
+    <nav class="tabs" aria-label="Seções">
+      <a href="#analisar" id="tab-analisar">Analisar</a>
+      <a href="#perfil" id="tab-perfil">Meu perfil</a>
+    </nav>
+  </header>
+
+  <!-- ANALISAR -->
+  <section class="panel" id="view-analisar">
+    <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <h2>Ler um produto</h2>
+      <div class="inputs">
+        <label class="btn big primary" id="photoBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
+          Fotografar rótulo
+          <span class="sub">tabela nutricional ou código de barras</span>
+          <input type="file" id="photoInput" accept="image/*" capture="environment" multiple>
+        </label>
+        <button class="btn big" id="manualBtn" type="button">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>
+          Digitar valores
+          <span class="sub">por 100 g ou 100 ml</span>
+        </button>
+      </div>
+      <form class="row" id="barcodeForm" autocomplete="off">
+        <input type="text" id="barcode" inputmode="numeric" placeholder="Código de barras (EAN)" style="flex:1 1 160px" aria-label="Código de barras">
+        <button class="btn" type="button" id="scanBtn" aria-label="Escanear código de barras com a câmera">
+          <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M3 7V4h3M21 7V4h-3M3 17v3h3M21 17v3h-3M7 8v8M10 8v8M13 8v8M17 8v8"/></svg>
+          Escanear
+        </button>
+        <button class="btn" type="submit">Buscar</button>
+      </form>
+      <div id="scanBox" hidden style="display:flex;flex-direction:column;gap:8px">
+        <div id="reader" style="width:100%;max-width:100%;border-radius:10px;overflow:hidden;background:#000"></div>
+        <button class="btn" type="button" id="scanStop">Fechar câmera</button>
+      </div>
+      <div id="status" class="status" hidden></div>
+      <div>
+        <h3 style="margin-bottom:8px">Produtos de exemplo</h3>
+        <div class="chips" id="examples"></div>
+      </div>
+    </div>
+
+    <!-- editor manual -->
+    <form class="card" id="editor" hidden autocomplete="off" style="display:flex;flex-direction:column;gap:12px">
+      <h2 id="editorTitle">Valores do rótulo</h2>
+      <p class="small muted">Preencha a coluna "100 g" (ou "100 ml") da tabela. Campos vazios contam como não informados.</p>
+      <label class="field"><span>Nome do produto</span><input type="text" id="e-nome"></label>
+      <div class="grid2">
+        <label class="field"><span>Tipo</span><select id="e-liquido"><option value="0">Sólido (por 100 g)</option><option value="1">Líquido (por 100 ml)</option></select></label>
+        <label class="field"><span>Porção (g ou ml)</span><input type="number" id="e-porcao" min="0" step="any"></label>
+      </div>
+      <div class="grid3" id="e-nut"></div>
+      <div>
+        <h3 style="margin-bottom:8px">Contém</h3>
+        <div class="chips" id="e-aler"></div>
+      </div>
+      <div class="row">
+        <button class="btn primary" type="submit">Calcular nota</button>
+        <button class="btn" type="button" id="editorCancel">Fechar</button>
+      </div>
+    </form>
+
+    <!-- resultado -->
+    <article class="card" id="result" style="display:flex;flex-direction:column;gap:16px" aria-live="polite"></article>
+
+    <div class="card" id="histCard" hidden style="display:flex;flex-direction:column;gap:10px">
+      <h3>Analisados recentemente</h3>
+      <div class="hist" id="hist"></div>
+    </div>
+  </section>
+
+  <!-- PERFIL -->
+  <section class="panel" id="view-perfil" hidden>
+    <form class="card" id="profileForm" autocomplete="off" style="display:flex;flex-direction:column;gap:12px">
+      <h2>Seu perfil</h2>
+      <p class="small muted" id="profileNote"></p>
+      <div class="grid2">
+        <label class="field"><span>Sexo biológico</span><select id="p-sexo"><option value="m">Masculino</option><option value="f">Feminino</option></select></label>
+        <label class="field"><span>Idade</span><input type="number" id="p-idade" min="12" max="100"></label>
+        <label class="field"><span>Peso (kg)</span><input type="number" id="p-peso" min="30" max="300" step="0.1"></label>
+        <label class="field"><span>Altura (cm)</span><input type="number" id="p-altura" min="120" max="230"></label>
+      </div>
+      <label class="field"><span>Nível de atividade</span>
+        <select id="p-ativ">
+          <option value="1.2">Sedentário (pouco ou nenhum exercício)</option>
+          <option value="1.375">Leve (1 a 3 treinos por semana)</option>
+          <option value="1.55">Moderado (3 a 5 treinos por semana)</option>
+          <option value="1.725">Intenso (6 ou 7 treinos por semana)</option>
+        </select></label>
+      <div>
+        <h3 style="margin-bottom:8px">Objetivo</h3>
+        <div class="chips" id="p-obj"></div>
+      </div>
+      <div>
+        <h3 style="margin-bottom:8px">Restrições alimentares</h3>
+        <div class="chips" id="p-restr"></div>
+      </div>
+      <button class="btn primary" type="submit">Salvar perfil</button>
+    </form>
+    <div class="card" style="display:flex;flex-direction:column;gap:12px">
+      <h2>Sua meta diária</h2>
+      <div class="targets" id="targets"></div>
+      <details class="small muted"><summary>Como calculamos</summary>
+        <p style="margin-top:8px">Gasto em repouso pela fórmula de Mifflin-St Jeor, multiplicado pelo nível de atividade. Emagrecer tira 20% das calorias, definir tira 10%, ganhar massa soma 10%. Proteína por quilo de peso conforme o objetivo; gordura em 25% das calorias; carboidrato completa o resto. Fibra de 14 g a cada 1.000 kcal. Sódio até 2.000 mg e açúcar adicionado até 10% das calorias, como recomenda a OMS.</p>
+      </details>
+    </div>
+  </section>
+
+  <p class="foot">Orientação geral, baseada no rótulo e em regras simples. Não substitui a avaliação de um nutricionista ou médico, principalmente em caso de doença, gravidez ou alergia grave. Os selos "ALTO EM" seguem os limites da rotulagem frontal da Anvisa (RDC 429/2020).</p>
+</div>
+
+<script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
+<script>
+(() => {
+"use strict";
+const $ = id => document.getElementById(id);
+const store = {
+  get(k, d){ try{ const v = localStorage.getItem(k); return v ? JSON.parse(v) : d; }catch(e){ return d; } },
+  set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} }
+};
+
+/* ---------- dados de referência ---------- */
+const OBJETIVOS = {
+  massa:    {label:"Ganhar massa", kcal:1.10, protKg:2.0, wProt:1.2, wAc:0.9, para:"ganho de massa"},
+  emagrecer:{label:"Emagrecer",    kcal:0.80, protKg:1.8, wProt:1.0, wAc:1.2, para:"emagrecer"},
+  definir:  {label:"Definir",      kcal:0.90, protKg:2.2, wProt:1.3, wAc:1.1, para:"definição"},
+  manter:   {label:"Manter",       kcal:1.00, protKg:1.6, wProt:1.0, wAc:1.0, para:"manter o peso"}
+};
+const RESTR = {
+  lactose:{label:"Sem lactose", aviso:"Contém leite ou derivados", tag:"lactose"},
+  gluten: {label:"Sem glúten",  aviso:"Contém glúten", tag:"gluten"},
+  vegano: {label:"Vegano",      aviso:"Contém ingrediente de origem animal", tag:"origem_animal"},
+  amendoim:{label:"Sem amendoim", aviso:"Contém amendoim", tag:"amendoim"}
+};
+const ALERG = [["lactose","Leite/lactose"],["gluten","Glúten"],["origem_animal","Origem animal"],["amendoim","Amendoim"],["ultra","Ultraprocessado"]];
+const NUTS = [
+  ["kcal","Valor energético","kcal"],["prot","Proteínas","g"],["carb","Carboidratos","g"],
+  ["acucar","Açúcares totais","g"],["acucarAdic","Açúcares adicionados","g"],["gord","Gorduras totais","g"],
+  ["gordSat","Gorduras saturadas","g"],["gordTrans","Gorduras trans","g"],["fibra","Fibras","g"],["sodio","Sódio","mg"]
+];
+const EXEMPLOS = [
+  {nome:"Iogurte proteico natural", liquido:false, porcao:170, ultra:false, tags:["lactose","origem_animal"],
+   n:{kcal:70,prot:10,carb:5,acucar:4,acucarAdic:0,gord:1,gordSat:0.6,gordTrans:0,fibra:0,sodio:50}},
+  {nome:"Biscoito recheado de chocolate", liquido:false, porcao:30, ultra:true, tags:["gluten","lactose","origem_animal"],
+   n:{kcal:480,prot:5,carb:68,acucar:35,acucarAdic:33,gord:20,gordSat:9,gordTrans:0,fibra:2,sodio:250}},
+  {nome:"Refrigerante de cola", liquido:true, porcao:350, ultra:true, tags:[],
+   n:{kcal:42,prot:0,carb:10.6,acucar:10.6,acucarAdic:10.6,gord:0,gordSat:0,gordTrans:0,fibra:0,sodio:10}},
+  {nome:"Aveia em flocos", liquido:false, porcao:30, ultra:false, tags:["gluten"],
+   n:{kcal:380,prot:14,carb:58,acucar:1,acucarAdic:0,gord:7.5,gordSat:1.4,gordTrans:0,fibra:10,sodio:5}},
+  {nome:"Peito de peru fatiado", liquido:false, porcao:40, ultra:true, tags:["origem_animal"],
+   n:{kcal:110,prot:17,carb:3,acucar:1,acucarAdic:1,gord:3,gordSat:1,gordTrans:0,fibra:0,sodio:1000}}
+].map(e => ({...e, exemplo:true}));
+
+const PERFIL_EXEMPLO = {sexo:"m", idade:28, peso:75, altura:178, ativ:1.55, obj:"massa", restr:[], exemplo:true};
+
+/* ---------- estado ---------- */
+let perfil = store.get("rc.perfil", PERFIL_EXEMPLO);
+let historico = store.get("rc.hist", []);
+let atual = store.get("rc.atual", EXEMPLOS[0]);
+
+/* ---------- metas ---------- */
+function metas(p){
+  const tmb = 10*p.peso + 6.25*p.altura - 5*p.idade + (p.sexo === "m" ? 5 : -161);
+  const o = OBJETIVOS[p.obj] || OBJETIVOS.manter;
+  const kcal = Math.round(tmb * Number(p.ativ) * o.kcal / 10) * 10;
+  const prot = Math.round(p.peso * o.protKg);
+  const gord = Math.round(kcal * 0.25 / 9);
+  const carb = Math.max(0, Math.round((kcal - prot*4 - gord*9) / 4));
+  return {kcal, prot, carb, gord, fibra: Math.round(kcal/1000*14), sodio:2000, acucarAdic: Math.round(kcal*0.10/4), gordSat: Math.round(kcal*0.10/9)};
+}
+
+/* ---------- avaliação ---------- */
+const fmt = (v, d=1) => v == null || isNaN(v) ? "–" : Number(v).toLocaleString("pt-BR", {maximumFractionDigits:d});
+const num = v => (v === "" || v == null || isNaN(Number(v))) ? null : Number(v);
+
+function avaliar(prod, p){
+  const o = OBJETIVOS[p.obj] || OBJETIVOS.manter;
+  const m = metas(p);
+  const n = prod.n || {};
+  const liq = !!prod.liquido;
+  const un = liq ? "100 ml" : "100 g";
+  const lim = liq ? {ac:7.5, sat:3, na:300} : {ac:15, sat:6, na:600};
+  const pos = [], neg = [], lupas = [], avisos = [];
+  let s = 5;
+  const add = (lista, w, t) => lista.push({w:Math.abs(w), t});
+
+  const kcal = num(n.kcal), prot = num(n.prot);
+  const porc = num(prod.porcao);
+  const fator = porc ? porc/100 : null;
+  const protPorc = (prot != null && fator) ? prot*fator : null;
+
+  // proteína: gramas a cada 100 kcal
+  if (kcal && prot != null){
+    const dens = prot / kcal * 100;
+    const txt = protPorc != null ? `${fmt(protPorc,0)} g de proteína por porção (${fmt(protPorc/m.prot*100,0)}% da sua meta)` : `${fmt(prot)} g de proteína em ${un}`;
+    if (dens >= 10){ const w=2.5*o.wProt; s+=w; add(pos,w,"Muita proteína: "+txt); }
+    else if (dens >= 6){ const w=1.5*o.wProt; s+=w; add(pos,w,"Boa proteína: "+txt); }
+    else if (dens >= 3){ const w=0.5*o.wProt; s+=w; add(pos,w,"Alguma proteína: "+txt); }
+    else if (kcal > 150 && (p.obj === "massa" || p.obj === "definir")){ s-=0.7; add(neg,0.7,`Pouca proteína para as calorias (${fmt(prot)} g em ${un})`); }
+  }
+  // fibra
+  const fib = num(n.fibra);
+  if (fib != null){
+    if (fib >= 6){ s+=1.5; add(pos,1.5,`Rico em fibras: ${fmt(fib)} g em ${un}`); }
+    else if (fib >= 3){ s+=0.8; add(pos,0.8,`Fonte de fibras: ${fmt(fib)} g em ${un}`); }
+  }
+  // açúcar (adicionado se houver, senão total)
+  const adic = num(n.acucarAdic), tot = num(n.acucar);
+  const ac = adic != null ? adic : tot;
+  const acNome = adic != null ? "açúcar adicionado" : "açúcar";
+  if (ac != null){
+    if (ac >= lim.ac){ const w=2.5*o.wAc; s-=w; add(neg,w,`Muito ${acNome}: ${fmt(ac)} g em ${un}`); lupas.push("Alto em açúcar adicionado"); }
+    else if (ac >= lim.ac/2){ const w=1*o.wAc; s-=w; add(neg,w,`${acNome[0].toUpperCase()+acNome.slice(1)} moderado: ${fmt(ac)} g em ${un}`); }
+    else if (ac <= lim.ac*0.2 && kcal){ s+=0.5; add(pos,0.6,`Pouco ${acNome} (${fmt(ac)} g em ${un})`); }
+  }
+  // gordura saturada
+  const sat = num(n.gordSat);
+  if (sat != null){
+    if (sat >= lim.sat){ s-=1.5; add(neg,1.5,`Gordura saturada alta: ${fmt(sat)} g em ${un}`); lupas.push("Alto em gordura saturada"); }
+    else if (sat >= lim.sat/2){ s-=0.5; add(neg,0.5,`Gordura saturada moderada: ${fmt(sat)} g em ${un}`); }
+  }
+  // trans
+  const trans = num(n.gordTrans);
+  if (trans != null && trans > 0.1){ s-=2; add(neg,2,`Tem gordura trans (${fmt(trans)} g em ${un}). O ideal é zero.`); avisos.push("Contém gordura trans"); }
+  // sódio
+  const na = num(n.sodio);
+  if (na != null){
+    if (na >= lim.na){ s-=1.5; add(neg,1.6,`Sódio alto: ${fmt(na,0)} mg em ${un}`+(fator?` (${fmt(na*fator/m.sodio*100,0)}% do limite diário por porção)`:"")); lupas.push("Alto em sódio"); }
+    else if (na >= lim.na/2){ s-=0.5; add(neg,0.5,`Sódio moderado: ${fmt(na,0)} mg em ${un}`); }
+    else if (na <= lim.na*0.2 && kcal){ s+=0.3; add(pos,0.3,`Pouco sódio (${fmt(na,0)} mg em ${un})`); }
+  }
+  // calorias conforme objetivo
+  if (kcal != null){
+    if (p.obj === "emagrecer" || p.obj === "definir"){
+      if (!liq && kcal > 400){ s-=1.5; add(neg,1.4,`Muito calórico: ${fmt(kcal,0)} kcal em ${un}`); }
+      else if (!liq && kcal < 150 && kcal > 0){ s+=1; add(pos,1,`Poucas calorias: ${fmt(kcal,0)} kcal em ${un}`); }
+      else if (liq && kcal > 30 && (prot||0) < 3){ s-=1; add(neg,1.2,`Bebida com calorias que não matam a fome (${fmt(kcal,0)} kcal em ${un})`); }
+    } else if (p.obj === "massa"){
+      if (kcal >= 250 && prot != null && prot/kcal*100 >= 6){ s+=0.5; add(pos,0.5,`Energia concentrada com proteína (${fmt(kcal,0)} kcal em ${un})`); }
+    }
+  }
+  // ultraprocessado
+  if (prod.ultra){ s-=1; add(neg,1,"Ultraprocessado: melhor como exceção do que como base da dieta"); }
+
+  // restrições
+  const tags = prod.tags || [];
+  let conflito = false;
+  for (const r of (p.restr||[])){
+    const R = RESTR[r];
+    if (R && tags.includes(R.tag)){ conflito = true; avisos.unshift(R.aviso + " — não combina com sua restrição"); }
+  }
+  s = Math.max(0, Math.min(10, s));
+  if (conflito) s = Math.min(s, 2);
+  s = Math.round(s*2)/2;
+
+  pos.sort((a,b)=>b.w-a.w); neg.sort((a,b)=>b.w-a.w);
+  const top3p = pos.slice(0,3).map(x=>x.t), top3n = neg.slice(0,3).map(x=>x.t);
+
+  // frase-resumo
+  const curto = t => t.split(":")[0].replace(/\s*\(.*$/,"").toLowerCase();
+  let titulo;
+  if (conflito) titulo = "Não combina com suas restrições";
+  else if (s >= 8) titulo = `Ótimo para ${o.para}`;
+  else if (s >= 6) titulo = `Boa opção para ${o.para}`;
+  else if (s >= 4) titulo = "Dá para consumir com moderação";
+  else titulo = "Melhor evitar no dia a dia";
+  const motivos = (s >= 6 ? top3p.slice(0,2) : top3n.slice(0,2)).map(curto);
+  const frase = motivos.length ? `${titulo}: ${motivos.join(", ")}.` : `${titulo}.`;
+
+  return {nota:s, frase, pros:top3p, contras:top3n, lupas, avisos, metas:m, fator, un};
+}
+
+/* ---------- render: resultado ---------- */
+const lupaSVG = '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10" cy="10" r="6.5" fill="none" stroke="currentColor" stroke-width="2.6"/><path d="M15 15l6 6" stroke="currentColor" stroke-width="3" stroke-linecap="round"/></svg>';
+const esc = s => String(s).replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function renderResultado(){
+  const el = $("result");
+  if (!atual){ el.hidden = true; return; }
+  el.hidden = false;
+  const r = avaliar(atual, perfil);
+  const cor = r.nota >= 7 ? "var(--good)" : r.nota >= 4 ? "var(--mid)" : "var(--bad)";
+  const lista = (arr, cls, vazio) => `<div class="${cls}"><h3>${cls==="pros"?"Pontos positivos":"Pontos negativos"}</h3>${arr.length?`<ul>${arr.map(t=>`<li><span>${esc(t)}</span></li>`).join("")}</ul>`:`<p class="none" style="margin-top:8px">${vazio}</p>`}</div>`;
+  const linhas = NUTS.map(([k,label,u]) => {
+    const v = num(atual.n?.[k]);
+    const vp = (v != null && r.fator) ? v*r.fator : null;
+    const meta = r.metas[k];
+    const pct = (vp != null && meta) ? fmt(vp/meta*100,0)+"%" : "–";
+    const ind = ["acucar","acucarAdic","gordSat","gordTrans"].includes(k) && k !== "acucar" ? " class=\"ind\"" : (k==="acucar"?" class=\"ind\"":"");
+    const d = u === "mg" || k === "kcal" ? 0 : 1;
+    return `<tr><td${ind}>${label}</td><td>${v==null?"–":fmt(v,d)+" "+u}</td><td>${vp==null?"–":fmt(vp,d)+" "+u}</td><td class="hi">${pct}</td></tr>`;
+  }).join("");
+  el.innerHTML = `
+    <div class="result-head">
+      <div class="dial" style="--v:${r.nota};--c:${cor}" role="img" aria-label="Nota ${fmt(r.nota)} de 10"><div><span><b>${fmt(r.nota)}</b><small>de 10</small></span></div></div>
+      <div style="min-width:0">
+        <p class="prodname">${esc(atual.nome||"Produto sem nome")}${atual.exemplo?'<span class="tag-ex">exemplo</span>':""}</p>
+        <p class="verdict">${esc(r.frase)}</p>
+        <p class="small muted">Para o objetivo: ${OBJETIVOS[perfil.obj].label.toLowerCase()}${perfil.exemplo?" (perfil de exemplo)":""}</p>
+      </div>
+    </div>
+    ${r.lupas.length?`<div class="lupas">${r.lupas.map(t=>`<span class="lupa">${lupaSVG}${esc(t)}</span>`).join("")}</div>`:""}
+    ${r.avisos.map(a=>`<div class="warn"><span aria-hidden="true">⚠︎</span><span>${esc(a)}</span></div>`).join("")}
+    <div class="procon">${lista(r.pros,"pros","Nenhum destaque positivo.")}${lista(r.contras,"cons","Nenhum ponto de atenção.")}</div>
+    <div class="tablewrap"><div class="tabela">
+      <div class="tt">Informação nutricional${atual.porcao?` · porção de ${fmt(atual.porcao,0)} ${atual.liquido?"ml":"g"}`:""}</div>
+      <table><thead><tr><th></th><th>${r.un}</th><th>Porção</th><th>Sua meta</th></tr></thead><tbody>${linhas}</tbody></table>
+    </div></div>
+    <div class="row"><button class="btn" type="button" id="editAtual">Corrigir valores</button></div>`;
+  $("editAtual").onclick = () => abrirEditor(atual);
+}
+
+function salvarAtual(prod){
+  atual = prod;
+  store.set("rc.atual", atual);
+  if (!prod.exemplo){
+    const r = avaliar(prod, perfil);
+    historico = [{...prod, quando:Date.now(), nota:r.nota}, ...historico.filter(h => h.nome !== prod.nome)].slice(0,8);
+    store.set("rc.hist", historico);
+  }
+  renderResultado(); renderHist();
+  $("result").scrollIntoView({behavior: matchMedia("(prefers-reduced-motion: reduce)").matches ? "auto" : "smooth", block:"start"});
+}
+
+function renderHist(){
+  $("histCard").hidden = !historico.length;
+  $("hist").innerHTML = historico.map((h,i) => {
+    const r = avaliar(h, perfil);
+    const d = new Date(h.quando).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"});
+    return `<button type="button" data-i="${i}"><span class="n">${fmt(r.nota)}</span><span>${esc(h.nome||"Produto")}</span><span class="d">${d}</span></button>`;
+  }).join("");
+  $("hist").querySelectorAll("button").forEach(b => b.onclick = () => { atual = historico[+b.dataset.i]; store.set("rc.atual", atual); renderResultado(); $("result").scrollIntoView({block:"start"}); });
+}
+
+/* ---------- exemplos ---------- */
+EXEMPLOS.forEach((ex) => {
+  const b = document.createElement("button");
+  b.type = "button"; b.className = "chip"; b.textContent = ex.nome;
+  b.onclick = () => { atual = ex; store.set("rc.atual", atual); renderResultado(); $("result").scrollIntoView({block:"start"}); };
+  $("examples").append(b);
+});
+
+/* ---------- editor ---------- */
+NUTS.forEach(([k,label,u]) => {
+  const l = document.createElement("label"); l.className = "field";
+  l.innerHTML = `<span>${label} (${u})</span><input type="number" step="any" min="0" id="e-${k}">`;
+  $("e-nut").append(l);
+});
+let alerSel = [];
+function renderAlerChips(){
+  $("e-aler").innerHTML = "";
+  ALERG.forEach(([k,label]) => {
+    const b = document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=label;
+    b.setAttribute("aria-pressed", alerSel.includes(k));
+    b.onclick = () => { alerSel = alerSel.includes(k) ? alerSel.filter(x=>x!==k) : [...alerSel,k]; renderAlerChips(); };
+    $("e-aler").append(b);
+  });
+}
+function abrirEditor(prod, titulo){
+  const p = prod || {n:{}};
+  $("editorTitle").textContent = titulo || (prod ? "Corrigir valores" : "Valores do rótulo");
+  $("e-nome").value = p.nome || "";
+  $("e-liquido").value = p.liquido ? "1" : "0";
+  $("e-porcao").value = p.porcao ?? "";
+  NUTS.forEach(([k]) => $("e-"+k).value = p.n?.[k] ?? "");
+  alerSel = [...(p.tags||[]), ...(p.ultra?["ultra"]:[])];
+  renderAlerChips();
+  $("editor").hidden = false;
+  $("editor").scrollIntoView({block:"start"});
+}
+$("manualBtn").onclick = () => abrirEditor(null);
+$("editorCancel").onclick = () => { $("editor").hidden = true; };
+$("editor").addEventListener("submit", e => {
+  e.preventDefault();
+  const n = {}; NUTS.forEach(([k]) => n[k] = num($("e-"+k).value));
+  if (n.kcal == null){ $("e-kcal").focus(); setStatus("Informe pelo menos o valor energético (kcal).","err"); return; }
+  const prod = {nome:$("e-nome").value.trim() || "Produto sem nome", liquido:$("e-liquido").value==="1", porcao:num($("e-porcao").value),
+    ultra:alerSel.includes("ultra"), tags:alerSel.filter(x=>x!=="ultra"), n};
+  $("editor").hidden = true; setStatus("");
+  salvarAtual(prod);
+});
+
+/* ---------- status ---------- */
+function setStatus(msg, tipo){
+  const s = $("status");
+  if (!msg){ s.hidden = true; return; }
+  s.hidden = false; s.className = "status" + (tipo ? " "+tipo : ""); s.innerHTML = msg;
+}
+
+/* ---------- código de barras (Open Food Facts) ---------- */
+function deOFF(code, pr){
+  const nu = pr.nutriments || {};
+  const g = k => num(nu[k+"_100g"]);
+  const al = (pr.allergens_tags||[]).join(" ") + " " + (pr.traces_tags||[]).join(" ");
+  const cats = (pr.categories_tags||[]).join(" ");
+  const tags = [];
+  if (/milk|lait|leite/.test(al)) tags.push("lactose");
+  if (/gluten/.test(al)) tags.push("gluten");
+  if (/peanut|amendoim/.test(al)) tags.push("amendoim");
+  if (/milk|egg|fish|crustacean|mollus/.test(al) || /meat|fish|dairies|eggs|seafood/.test(cats) || (pr.ingredients_analysis_tags||[]).includes("en:non-vegan")) tags.push("origem_animal");
+  const sodio = g("sodium") != null ? g("sodium")*1000 : (g("salt") != null ? g("salt")*400 : null);
+  return {
+    nome: [pr.product_name, pr.brands].filter(Boolean).join(" · ") || ("Produto " + code),
+    liquido: pr.nutrition_data_per === "100ml" || /beverages|bebidas/.test(cats),
+    porcao: num(pr.serving_quantity), ultra: pr.nova_group === 4, tags: [...new Set(tags)],
+    n:{kcal:g("energy-kcal") ?? (g("energy")!=null ? g("energy")/4.184 : null), prot:g("proteins"), carb:g("carbohydrates"), acucar:g("sugars"),
+       acucarAdic:g("added-sugars"), gord:g("fat"), gordSat:g("saturated-fat"), gordTrans:g("trans-fat"), fibra:g("fiber"), sodio}
+  };
+}
+/* resultado: "ok" | "naoachou" | "semtabela" | "bloqueado" */
+async function buscarCodigo(code){
+  $("barcode").value = code;
+  setStatus(`Buscando o código ${code} na base Open Food Facts…`);
+  const link = `<a href="https://br.openfoodfacts.org/produto/${code}" target="_blank" rel="noopener">ver o produto no Open Food Facts</a>`;
+  let j;
+  try{
+    const res = await fetch(`https://world.openfoodfacts.org/api/v2/product/${code}.json?fields=product_name,brands,nutriments,serving_quantity,nova_group,allergens_tags,traces_tags,categories_tags,nutrition_data_per,ingredients_analysis_tags`);
+    if (res.status === 404) j = {status:0};
+    else if (!res.ok) throw new Error("http " + res.status);
+    else j = await res.json();
+  }catch(err){
+    setStatus(`Código ${code} lido, mas esta tela do Claude não permite acessar sites externos, então a busca na base fica bloqueada aqui. Fotografe a tabela nutricional, digite os valores ou ${link}. Na versão hospedada no seu site, a busca funciona.`,"err");
+    return "bloqueado";
+  }
+  if (j.status !== 1 || !j.product){ setStatus(`O código ${code} ainda não está na base. Fotografe a tabela nutricional ou digite os valores.`,"err"); return "naoachou"; }
+  const prod = deOFF(code, j.product);
+  if (prod.n.kcal == null){ setStatus("Achamos o produto, mas sem tabela nutricional. Fotografe o rótulo para completar.","err"); abrirEditor(prod,"Complete os valores"); return "semtabela"; }
+  setStatus("Produto encontrado na base Open Food Facts.","ok");
+  salvarAtual(prod);
+  return "ok";
+}
+$("barcodeForm").addEventListener("submit", e => {
+  e.preventDefault();
+  const code = $("barcode").value.replace(/\D/g,"");
+  if (code.length < 8){ setStatus("O código de barras tem 8, 12 ou 13 números. Confira e tente de novo.","err"); return; }
+  buscarCodigo(code);
+});
+
+/* ---------- leitor de código de barras ---------- */
+const temLeitor = () => typeof window.Html5Qrcode === "function";
+const formatos = () => {
+  const F = window.Html5QrcodeSupportedFormats;
+  return F ? [F.EAN_13, F.EAN_8, F.UPC_A, F.UPC_E] : undefined;
+};
+let leitor = null;
+async function fecharCamera(){
+  if (leitor){ try{ await leitor.stop(); }catch(e){} try{ leitor.clear(); }catch(e){} leitor = null; }
+  $("scanBox").hidden = true;
+}
+$("scanStop").onclick = fecharCamera;
+$("scanBtn").onclick = async () => {
+  if (!temLeitor()){ setStatus("O leitor de código não carregou. Verifique a internet e recarregue a página.","err"); return; }
+  if (leitor) return;
+  $("scanBox").hidden = false;
+  setStatus("Aponte a câmera para o código de barras, com a embalagem bem iluminada.");
+  leitor = new Html5Qrcode("reader", {formatsToSupport: formatos(), verbose:false});
+  try{
+    await leitor.start({facingMode:"environment"}, {fps:10, qrbox:(w,h)=>({width:Math.min(300,w*0.85), height:Math.min(140,h*0.5)})},
+      async texto => { const code = String(texto).replace(/\D/g,""); await fecharCamera(); buscarCodigo(code); }, () => {});
+  }catch(err){
+    leitor = null; $("scanBox").hidden = true;
+    setStatus("A câmera não abriu. Nesta tela do Claude ela é bloqueada; no site hospedado, permita o acesso à câmera quando o navegador pedir. Enquanto isso, fotografe o código de barras pelo botão “Fotografar rótulo” ou digite os números.","err");
+  }
+};
+async function codigoDaFoto(file){
+  if (!temLeitor()) return null;
+  try{
+    const tmp = new Html5Qrcode("reader", {formatsToSupport: formatos(), verbose:false});
+    const t = await tmp.scanFile(file, false);
+    try{ tmp.clear(); }catch(e){}
+    const code = String(t).replace(/\D/g,"");
+    return code.length >= 8 ? code : null;
+  }catch(e){ return null; }
+}
+
+/* ---------- foto do rótulo (Claude lê a tabela) ---------- */
+let sample = null;
+const PROMPT = `Você recebe foto(s) do rótulo de um alimento vendido no Brasil (tabela nutricional e, talvez, lista de ingredientes e frente da embalagem).
+Extraia os dados e responda SOMENTE com um objeto JSON neste formato:
+{"legivel":true,"nome":"string ou null","liquido":false,"porcao":30,"ultraprocessado":false,"tags":["lactose"],
+ "por100":{"kcal":0,"prot":0,"carb":0,"acucar":0,"acucarAdic":0,"gord":0,"gordSat":0,"gordTrans":0,"fibra":0,"sodio":0}}
+Regras:
+- "por100" é por 100 g (sólido) ou 100 ml (líquido). Se o rótulo só mostra por porção, converta para 100 usando o tamanho da porção.
+- "sodio" em miligramas. "porcao" em g ou ml (só o número). Use null para o que não aparece.
+- "liquido": true se a tabela é por 100 ml.
+- "tags": inclua "lactose" se tem leite/derivados, "gluten" se contém glúten (trigo, cevada, centeio, aveia com aviso), "amendoim", e "origem_animal" se tem carne, leite, ovo, mel, gelatina ou peixe. Lista vazia se não der para saber.
+- "ultraprocessado": true se os ingredientes têm aditivos de uso industrial (aromatizantes, corantes, emulsificantes, xarope de glicose, gordura hidrogenada etc.); null se não houver lista de ingredientes.
+- Se a imagem não for um rótulo legível, responda {"legivel":false}.`;
+
+(async () => {
+  try{
+    if (window.claude && typeof window.claude.use === "function") sample = await window.claude.use("sample");
+  }catch(e){ sample = null; }
+})();
+
+$("photoInput").addEventListener("change", async e => {
+  const files = [...e.target.files];
+  e.target.value = "";
+  if (!files.length) return;
+  // 1º: se alguma foto mostra o código de barras, tenta a base
+  setStatus("Procurando código de barras na foto…");
+  for (const f of files){
+    const code = await codigoDaFoto(f);
+    if (code){
+      const r = await buscarCodigo(code);
+      if (r === "ok" || r === "semtabela") return;
+      break;
+    }
+  }
+  // 2º: o Claude lê a tabela nutricional (dentro do Claude ou pelo seu servidor)
+  $("photoBtn").setAttribute("aria-busy","true");
+  setStatus("Lendo o rótulo… isso leva alguns segundos.");
+  try{
+    const d = await lerRotulo(files);
+    if (!d || d.legivel === false || !d.por100){ setStatus("Não deu para ler a tabela nessa foto. Tente com mais luz, sem reflexo e com a tabela inteira no quadro.","err"); return; }
+    const n = {}; NUTS.forEach(([k]) => n[k] = num(d.por100[k]));
+    const prod = {nome: d.nome || "Produto fotografado", liquido: !!d.liquido, porcao: num(d.porcao), ultra: d.ultraprocessado === true,
+      tags: Array.isArray(d.tags) ? d.tags.filter(t => ["lactose","gluten","amendoim","origem_animal"].includes(t)) : [], n};
+    if (n.kcal == null){ setStatus("Li o rótulo, mas faltou o valor energético. Confira os números abaixo.","err"); abrirEditor(prod,"Confira os valores lidos"); return; }
+    setStatus("Rótulo lido. Confira os números na tabela e corrija se algo saiu diferente da embalagem.","ok");
+    salvarAtual(prod);
+  }catch(err){
+    const msgs = {not_granted:"Você não permitiu o uso do Claude nesta página. Digite os valores do rótulo.",
+      rate_limited:"O limite gratuito de leituras foi atingido. Espere um pouco (o limite diário renova às 4h ou 5h da manhã) ou digite os valores.",
+      image_rejected:"Essa imagem não pôde ser usada. Tente outra foto (JPG ou PNG).",
+      invalid_json:"A leitura veio incompleta. Tente de novo com uma foto mais nítida.",
+      sem_servidor:"A leitura por foto precisa do servidor do Rótulo Certo, e este site só tem a página. Publique a pasta completa (com a pasta api) e configure a chave GEMINI_API_KEY. Enquanto isso, digite os valores do rótulo.",
+      sem_chave:"O servidor está no ar, mas a chave da IA está faltando ou é inválida. Confira GEMINI_API_KEY nas variáveis do servidor. Enquanto isso, digite os valores do rótulo.",
+      servidor:"O servidor não conseguiu ler o rótulo agora. Tente de novo em instantes ou digite os valores."};
+    setStatus(msgs[err?.code] || "A leitura falhou. Tente de novo ou digite os valores.","err");
+    if (["sem_servidor","sem_chave","not_granted"].includes(err?.code)) abrirEditor(null);
+  }finally{ $("photoBtn").removeAttribute("aria-busy"); }
+});
+
+/* reduz a foto antes de enviar (celulares geram fotos de 4 a 12 MB) */
+async function reduzirFoto(file, max = 1600){
+  try{
+    const bmp = await createImageBitmap(file);
+    const k = Math.min(1, max / Math.max(bmp.width, bmp.height));
+    const c = document.createElement("canvas");
+    c.width = Math.round(bmp.width*k); c.height = Math.round(bmp.height*k);
+    c.getContext("2d").drawImage(bmp, 0, 0, c.width, c.height);
+    const url = c.toDataURL("image/jpeg", 0.85);
+    return url.slice(url.indexOf(",")+1);
+  }catch(e){
+    return await new Promise((ok, falha) => { const r = new FileReader(); r.onload = () => ok(String(r.result).split(",")[1]); r.onerror = falha; r.readAsDataURL(file); });
+  }
+}
+
+async function lerRotulo(files){
+  // dentro do Claude
+  if (sample){
+    let lim = null; try{ lim = await sample.limits(); }catch(err){}
+    if (lim?.images) return await sample.json(PROMPT, {images: files.slice(0, lim.images.maxCount || 2)});
+  }
+  // no seu servidor
+  const imagens = [];
+  for (const f of files.slice(0, 3)) imagens.push(await reduzirFoto(f));
+  let res;
+  try{
+    res = await fetch("api/ler-rotulo", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({imagens})});
+  }catch(e){ throw {code:"sem_servidor"}; }
+  if (res.status === 404 || res.status === 405) throw {code:"sem_servidor"};
+  let j = null; try{ j = await res.json(); }catch(e){}
+  if (!res.ok){ throw {code: j?.erro || "servidor"}; }
+  return j;
+}
+
+/* ---------- perfil ---------- */
+let objSel = perfil.obj, restrSel = [...(perfil.restr||[])];
+function renderPerfilChips(){
+  $("p-obj").innerHTML = ""; $("p-restr").innerHTML = "";
+  Object.entries(OBJETIVOS).forEach(([k,o]) => {
+    const b = document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=o.label;
+    b.setAttribute("aria-pressed", objSel===k); b.onclick = () => { objSel=k; renderPerfilChips(); previewMetas(); };
+    $("p-obj").append(b);
+  });
+  Object.entries(RESTR).forEach(([k,r]) => {
+    const b = document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=r.label;
+    b.setAttribute("aria-pressed", restrSel.includes(k));
+    b.onclick = () => { restrSel = restrSel.includes(k) ? restrSel.filter(x=>x!==k) : [...restrSel,k]; renderPerfilChips(); };
+    $("p-restr").append(b);
+  });
+}
+function lerForm(){
+  return {sexo:$("p-sexo").value, idade:num($("p-idade").value)||30, peso:num($("p-peso").value)||70,
+    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel};
+}
+function renderMetas(p){
+  const m = metas(p);
+  const it = [["kcal","Calorias","kcal"],["prot","Proteína","g"],["carb","Carboidrato","g"],["gord","Gordura","g"],["fibra","Fibra (mín.)","g"],["sodio","Sódio (máx.)","mg"]];
+  $("targets").innerHTML = it.map(([k,l,u]) => `<div><b>${fmt(m[k],0)}</b><span>${u} · ${l}</span></div>`).join("");
+}
+const previewMetas = () => renderMetas(lerForm());
+function preencherPerfil(){
+  $("p-sexo").value = perfil.sexo; $("p-idade").value = perfil.idade; $("p-peso").value = perfil.peso;
+  $("p-altura").value = perfil.altura; $("p-ativ").value = String(perfil.ativ);
+  objSel = perfil.obj; restrSel = [...(perfil.restr||[])];
+  $("profileNote").textContent = perfil.exemplo ? "Este é um perfil de exemplo. Troque pelos seus dados e salve." : "As notas usam estes dados. Atualize quando seu peso ou objetivo mudar.";
+  renderPerfilChips(); renderMetas(perfil);
+}
+["p-sexo","p-idade","p-peso","p-altura","p-ativ"].forEach(id => $(id).addEventListener("input", previewMetas));
+$("profileForm").addEventListener("submit", e => {
+  e.preventDefault();
+  perfil = lerForm(); store.set("rc.perfil", perfil);
+  preencherPerfil(); renderResultado(); renderHist();
+  location.hash = "analisar";
+});
+
+/* ---------- navegação ---------- */
+function rota(){
+  const v = location.hash === "#perfil" ? "perfil" : "analisar";
+  $("view-analisar").hidden = v !== "analisar";
+  $("view-perfil").hidden = v !== "perfil";
+  $("tab-analisar").toggleAttribute("aria-current", v === "analisar");
+  $("tab-perfil").toggleAttribute("aria-current", v === "perfil");
+  if (v === "analisar") $("tab-analisar").setAttribute("aria-current","page"); else $("tab-perfil").setAttribute("aria-current","page");
+}
+window.addEventListener("hashchange", rota);
+
+preencherPerfil(); renderResultado(); renderHist(); rota();
+})();
+</script>
+
+</body>
+</html>
