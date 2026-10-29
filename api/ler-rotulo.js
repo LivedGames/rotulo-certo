@@ -1,9 +1,13 @@
 // Lê a foto do rótulo com IA e devolve os valores nutricionais em JSON.
-// Use UMA destas chaves (só no servidor; o navegador nunca a vê):
-//   GEMINI_API_KEY     -> Google Gemini, tem plano gratuito (aistudio.google.com)
-//   ANTHROPIC_API_KEY  -> Claude, pago por uso (console.anthropic.com)
-// Se as duas existirem, usa o Gemini.
+// Configure pelo menos UMA destas chaves (só no servidor; o navegador nunca a vê):
+//   GROQ_API_KEY        -> Groq, plano gratuito (console.groq.com)          [recomendado]
+//   OPENROUTER_API_KEY  -> OpenRouter, modelos gratuitos (openrouter.ai)
+//   GEMINI_API_KEY      -> Google Gemini, plano gratuito (aistudio.google.com)
+//   ANTHROPIC_API_KEY   -> Claude, pago por uso (console.anthropic.com)
+// Com várias chaves, tenta nesta ordem e passa para a próxima se uma falhar.
 
+const MODELO_GROQ = process.env.MODELO_GROQ || "qwen/qwen3.8-27b";
+const MODELO_OPENROUTER = process.env.MODELO_OPENROUTER || "openrouter/free";
 const MODELO_GEMINI = process.env.MODELO_GEMINI || "gemini-3.5-flash-lite";
 const MODELO_CLAUDE = process.env.MODELO || "claude-haiku-5-5";
 const MAX_IMAGENS = 3;
@@ -22,7 +26,7 @@ Regras:
 - Se a imagem não for um rótulo legível, responda {"legivel":false}.`;
 
 function extrairJSON(texto) {
-  const t = String(texto || "").trim();
+  const t = String(texto || "").replace(/<think>[\s\S]*?<\/think>/gi, "").trim();
   try { return JSON.parse(t); } catch {}
   const cerca = t.match(/```(?:json)?\s*([\s\S]*?)```/);
   if (cerca) { try { return JSON.parse(cerca[1]); } catch {} }
@@ -44,9 +48,16 @@ export default async function handler(req, res) {
     res.setHeader("Allow", "POST");
     return res.status(405).json({ erro: "metodo" });
   }
-  const chaveGemini = process.env.GEMINI_API_KEY;
-  const chaveClaude = process.env.ANTHROPIC_API_KEY;
-  if (!chaveGemini && !chaveClaude) return res.status(500).json({ erro: "sem_chave" });
+  const provedores = [
+    ["Groq", limparChave(process.env.GROQ_API_KEY, "GROQ_API_KEY"), pedirGroq],
+    ["OpenRouter", limparChave(process.env.OPENROUTER_API_KEY, "OPENROUTER_API_KEY"), pedirOpenRouter],
+    ["Gemini", limparChave(process.env.GEMINI_API_KEY, "GEMINI_API_KEY"), pedirGemini],
+    ["Claude", limparChave(process.env.ANTHROPIC_API_KEY, "ANTHROPIC_API_KEY"), pedirClaude],
+  ].filter(([, chave]) => chave);
+  if (!provedores.length) {
+    console.error("Nenhuma chave configurada. Variáveis com 'KEY' no nome:", Object.keys(process.env).filter(k => /KEY/i.test(k)).join(", ") || "nenhuma");
+    return res.status(500).json({ erro: "sem_chave", detalhe: "Nenhuma variável GROQ_API_KEY, OPENROUTER_API_KEY ou GEMINI_API_KEY neste servidor." });
+  }
 
   let corpo = req.body;
   if (typeof corpo === "string") { try { corpo = JSON.parse(corpo); } catch { corpo = null; } }
@@ -60,24 +71,68 @@ export default async function handler(req, res) {
     fotos.push({ tipo, b64 });
   }
 
-  try {
-    const r = chaveGemini ? await pedirGemini(chaveGemini, fotos) : await pedirClaude(chaveClaude, fotos);
-    if (r.erro) return res.status(r.status).json({ erro: r.erro });
-    const dados = extrairJSON(r.texto);
-    if (!dados) return res.status(502).json({ erro: "invalid_json" });
-    return res.status(200).json(dados);
-  } catch (e) {
-    console.error("Falha ao chamar a IA:", e);
-    return res.status(502).json({ erro: "servidor" });
+  let ultimo = null;
+  for (const [nome, chave, pedir] of provedores) {
+    try {
+      const r = await pedir(chave, fotos);
+      if (r.erro) { ultimo = r; continue; }
+      const dados = extrairJSON(r.texto);
+      if (!dados) { console.error(`Resposta sem JSON (${nome}):`, String(r.texto).slice(0, 300)); ultimo = { status: 502, erro: "invalid_json", detalhe: `${nome} não devolveu JSON.` }; continue; }
+      return res.status(200).json(dados);
+    } catch (e) {
+      console.error(`Falha ao chamar ${nome}:`, e);
+      ultimo = { status: 502, erro: "servidor", detalhe: `${nome}: ${e.message}` };
+    }
   }
+  return res.status(ultimo.status).json({ erro: ultimo.erro, detalhe: ultimo.detalhe });
+}
+
+// Tira espaços, aspas, quebras de linha e "NOME=" colados por engano junto com a chave
+function limparChave(v, nome) {
+  if (!v) return "";
+  const tira = x => x.replace(/^["'\s]+|["'\s]+$/g, "");
+  let c = tira(String(v));
+  if (c.startsWith(nome + "=")) c = tira(c.slice(nome.length + 1));
+  return c;
 }
 
 function erroHttp(origem, status, j) {
   console.error(`Erro da API ${origem}:`, status, JSON.stringify(j));
-  if (status === 429) return { status: 429, erro: "rate_limited" };
-  if (status === 401 || status === 403) return { status: 500, erro: "sem_chave" };
-  if (status === 400 && /API key|API_KEY/i.test(JSON.stringify(j))) return { status: 500, erro: "sem_chave" };
-  return { status: 502, erro: "servidor" };
+  const detalhe = `${origem} respondeu ${status}: ${String(j?.error?.message || "").slice(0, 300)}`;
+  if (status === 429) return { status: 429, erro: "rate_limited", detalhe };
+  if (status === 401 || status === 403) return { status: 500, erro: "chave_invalida", detalhe };
+  if (status === 400 && /API key|API_KEY/i.test(JSON.stringify(j))) return { status: 500, erro: "chave_invalida", detalhe };
+  if (status === 404) return { status: 502, erro: "modelo", detalhe };
+  return { status: 502, erro: "servidor", detalhe };
+}
+
+async function pedirCompativelOpenAI(origem, url, chave, modelo, fotos, extras = {}) {
+  const r = await fetch(url, {
+    method: "POST",
+    headers: { authorization: `Bearer ${chave}`, "content-type": "application/json", ...extras },
+    body: JSON.stringify({
+      model: modelo,
+      temperature: 0,
+      max_tokens: 1500,
+      response_format: { type: "json_object" },
+      messages: [{ role: "user", content: [
+        { type: "text", text: PROMPT },
+        ...fotos.map(f => ({ type: "image_url", image_url: { url: `data:${f.tipo};base64,${f.b64}` } })),
+      ] }],
+    }),
+  });
+  const j = await r.json().catch(() => null);
+  if (!r.ok) return erroHttp(origem, r.status, j);
+  return { texto: j?.choices?.[0]?.message?.content || "" };
+}
+
+function pedirGroq(chave, fotos) {
+  return pedirCompativelOpenAI("do Groq", "https://api.groq.com/openai/v1/chat/completions", chave, MODELO_GROQ, fotos);
+}
+
+function pedirOpenRouter(chave, fotos) {
+  return pedirCompativelOpenAI("do OpenRouter", "https://openrouter.ai/api/v1/chat/completions", chave, MODELO_OPENROUTER, fotos,
+    { "x-title": "Rotulo Certo" });
 }
 
 async function pedirGemini(chave, fotos) {
