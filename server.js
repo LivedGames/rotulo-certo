@@ -1,12 +1,19 @@
 // Servidor para rodar fora da Vercel (no seu computador, Render, Railway, VPS etc.).
-// Uso: GEMINI_API_KEY=sua-chave node server.js   →   http://localhost:3000
+// Uso: GROQ_API_KEY=sua-chave node server.js   →   http://localhost:3000
 import http from "node:http";
-import { readFile } from "node:fs/promises";
+import { readFile, readdir } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import lerRotulo from "./api/ler-rotulo.js";
+import { pathToFileURL } from "node:url";
 
 const PASTA = path.dirname(fileURLToPath(import.meta.url));
+
+// Acha a pasta "api" mesmo que tenha sido enviada como "API" ou "Api"
+const nomePastaApi = (await readdir(PASTA)).find(n => n.toLowerCase() === "api");
+if (!nomePastaApi) { console.error("Erro: não encontrei a pasta api com o arquivo ler-rotulo.js."); process.exit(1); }
+const nomeArquivo = (await readdir(path.join(PASTA, nomePastaApi))).find(n => n.toLowerCase() === "ler-rotulo.js");
+if (!nomeArquivo) { console.error(`Erro: não encontrei ler-rotulo.js dentro da pasta ${nomePastaApi}.`); process.exit(1); }
+const { default: lerRotulo } = await import(pathToFileURL(path.join(PASTA, nomePastaApi, nomeArquivo)).href);
 const PORTA = Number(process.env.PORT) || 3000;
 const LIMITE = 12_000_000; // tamanho máximo do pedido
 
@@ -49,5 +56,5 @@ http.createServer(async (req, res) => {
   res.status(404).end("Não encontrado");
 }).listen(PORTA, () => {
   console.log(`Rótulo Certo rodando em http://localhost:${PORTA}`);
-  if (!process.env.GEMINI_API_KEY && !process.env.ANTHROPIC_API_KEY) console.log("Atenção: falta GEMINI_API_KEY (ou ANTHROPIC_API_KEY). A leitura por foto não vai funcionar.");
+  if (!["GROQ_API_KEY","OPENROUTER_API_KEY","GEMINI_API_KEY","ANTHROPIC_API_KEY"].some(k => process.env[k])) console.log("Atenção: falta GROQ_API_KEY (ou outra chave de IA). A leitura por foto não vai funcionar.");
 });
