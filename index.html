@@ -652,11 +652,13 @@ $("photoInput").addEventListener("change", async e => {
       rate_limited:"O limite gratuito de leituras foi atingido. Espere um pouco (o limite diário renova às 4h ou 5h da manhã) ou digite os valores.",
       image_rejected:"Essa imagem não pôde ser usada. Tente outra foto (JPG ou PNG).",
       invalid_json:"A leitura veio incompleta. Tente de novo com uma foto mais nítida.",
-      sem_servidor:"A leitura por foto precisa do servidor do Rótulo Certo, e este site só tem a página. Publique a pasta completa (com a pasta api) e configure a chave GEMINI_API_KEY. Enquanto isso, digite os valores do rótulo.",
-      sem_chave:"O servidor está no ar, mas a chave da IA está faltando ou é inválida. Confira GEMINI_API_KEY nas variáveis do servidor. Enquanto isso, digite os valores do rótulo.",
+      sem_servidor:"A leitura por foto precisa do servidor do Rótulo Certo, e este site só tem a página. Publique a pasta completa (com a pasta api) e configure a chave GROQ_API_KEY. Enquanto isso, digite os valores do rótulo.",
+      sem_chave:"O servidor está no ar, mas não encontrou nenhuma chave de IA. No Railway, crie a variável GROQ_API_KEY na aba Variables do serviço do app e espere o novo deploy terminar.",
+      chave_invalida:"O servidor está no ar, mas o serviço de IA recusou a chave. Gere uma chave nova (console.groq.com/keys) e cole de novo na variável, sem espaços ou aspas.",
+      modelo:"O modelo de IA configurado não existe mais. Veja o detalhe técnico abaixo e troque o modelo nas variáveis do servidor.",
       servidor:"O servidor não conseguiu ler o rótulo agora. Tente de novo em instantes ou digite os valores."};
-    setStatus(msgs[err?.code] || "A leitura falhou. Tente de novo ou digite os valores.","err");
-    if (["sem_servidor","sem_chave","not_granted"].includes(err?.code)) abrirEditor(null);
+    setStatus(esc(msgs[err?.code] || "A leitura falhou. Tente de novo ou digite os valores.") + (err?.detalhe ? `<br><small>Detalhe técnico: ${esc(err.detalhe)}</small>` : ""),"err");
+    if (["sem_servidor","sem_chave","chave_invalida","modelo","not_granted"].includes(err?.code)) abrirEditor(null);
   }finally{ $("photoBtn").removeAttribute("aria-busy"); }
 });
 
@@ -690,7 +692,7 @@ async function lerRotulo(files){
   }catch(e){ throw {code:"sem_servidor"}; }
   if (res.status === 404 || res.status === 405) throw {code:"sem_servidor"};
   let j = null; try{ j = await res.json(); }catch(e){}
-  if (!res.ok){ throw {code: j?.erro || "servidor"}; }
+  if (!res.ok){ throw {code: j?.erro || "servidor", detalhe: j?.detalhe}; }
   return j;
 }
 
