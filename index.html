@@ -69,7 +69,15 @@ label.btn{position:relative}
 label.btn input{position:absolute;width:1px;height:1px;opacity:0}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row > *{min-width:0}
-input[type=text],input[type=number],select{font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%}
+input[type=text],input[type=number],select,textarea{font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%}
+textarea{resize:vertical;min-height:64px;line-height:1.4}
+.ingr{display:flex;flex-direction:column;gap:6px}
+.ing{display:grid;grid-template-columns:1fr 78px auto auto;gap:8px;align-items:center;background:var(--bg);border-radius:9px;padding:6px 8px}
+.ing .nm{min-width:0;overflow-wrap:anywhere;font-size:.88rem;font-weight:600}
+.ing .nm small{display:block;font-weight:400;color:var(--muted);font-size:.76rem}
+.ing input{padding:6px 8px;text-align:right}
+.ing .u{font-size:.8rem;color:var(--muted);width:20px}
+.est{font:700 .62rem var(--f-label);text-transform:uppercase;letter-spacing:.06em;background:var(--mid-soft);border-radius:4px;padding:1px 5px;margin-left:4px;color:var(--ink)}
 .field{display:flex;flex-direction:column;gap:4px}
 .field span{font-size:.78rem;font-weight:600;color:var(--muted)}
 .grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -228,6 +236,17 @@ details summary{cursor:pointer;font-weight:600}
         <div class="chips" id="examples"></div>
       </div>
     </div>
+
+    <form class="card" id="textoForm" autocomplete="off">
+      <h2>Comida sem rótulo</h2>
+      <label class="field"><span>O que você comeu ou vai preparar?</span>
+        <textarea id="textoComida" rows="2" maxlength="400" placeholder="Ex.: shake com 300 ml de leite, 1 banana, 2 colheres de aveia e 1 scoop de whey"></textarea></label>
+      <div class="row">
+        <button class="btn primary" type="submit" id="textoBtn">Analisar refeição</button>
+        <span class="small muted">Entende "uma banana", "2 colheres", "200 g", "1 copo", "1 scoop".</span>
+      </div>
+      <div class="chips" id="textoExemplos"></div>
+    </form>
 
     <form class="card" id="editor" hidden autocomplete="off">
       <h2 id="editorTitle">Valores do rótulo</h2>
@@ -469,6 +488,177 @@ const EXEMPLOS = [
 ].map(e => ({...e, exemplo:true}));
 const chave = p => p.code ? "c:" + p.code : "n:" + (p.nome || "").toLowerCase();
 
+/* ---------- tabela de alimentos (valores por 100 g ou 100 ml) ----------
+   Fonte principal: TACO (Unicamp). Itens industrializados genéricos: média de rótulos.
+   n = [kcal, prot, carb, açúcar adicionado, gord, gord sat, fibra, sódio mg]
+   u = gramas de 1 unidade/porção caseira; o = medidas e extras */
+const ALIMENTOS = [
+  // frutas
+  ["Banana", ["banana","banana prata","banana nanica"], [98,1.3,26,0,0.1,0,2,0], 75, {un:"unidade"}],
+  ["Maçã", ["maca","macas"], [56,0.3,15.2,0,0,0,1.3,0], 130, {un:"unidade"}],
+  ["Laranja", ["laranja"], [37,1,8.9,0,0.1,0,0.8,0], 140, {un:"unidade"}],
+  ["Mamão", ["mamao","papaia","mamao papaia"], [40,0.5,10.4,0,0.1,0,1,3], 150, {un:"metade", fa:100}],
+  ["Morango", ["morango"], [30,0.9,6.8,0,0.3,0,1.7,0], 12, {un:"unidade", xi:150}],
+  ["Abacate", ["abacate"], [96,1.2,6,0,8.4,1.7,6.3,0], 30, {un:"colher", cs:30}],
+  ["Manga", ["manga"], [64,0.4,16.7,0,0.3,0.1,1.6,0], 200, {un:"unidade"}],
+  ["Melancia", ["melancia"], [33,0.9,8.1,0,0,0,0.1,0], 200, {un:"fatia", fa:200}],
+  ["Abacaxi", ["abacaxi"], [48,0.9,12.3,0,0.1,0,1,0], 75, {un:"fatia", fa:75}],
+  ["Uva", ["uva"], [53,0.7,13.6,0,0.2,0,0.9,0], 5, {un:"unidade", xi:150}],
+  ["Pera", ["pera"], [53,0.6,14,0,0.1,0,3,0], 130, {un:"unidade"}],
+  ["Kiwi", ["kiwi"], [51,1.3,11.5,0,0.6,0,2.7,0], 75, {un:"unidade"}],
+  // laticínios e ovos
+  ["Leite integral", ["leite","leite integral"], [61,3.2,4.6,0,3.3,2,0,50], 200, {l:1, un:"copo", tags:["lactose","origem_animal"]}],
+  ["Leite desnatado", ["leite desnatado"], [35,3.4,5,0,0.2,0.1,0,51], 200, {l:1, un:"copo", tags:["lactose","origem_animal"]}],
+  ["Leite sem lactose", ["leite sem lactose","leite zero lactose"], [44,3,4.6,0,1.5,1,0,50], 200, {l:1, un:"copo", tags:["origem_animal"], nova:2}],
+  ["Leite vegetal de aveia", ["leite de aveia","bebida de aveia"], [45,0.8,6.5,3,1.5,0.2,0.8,40], 200, {l:1, un:"copo", nova:4, fonte:"média de rótulos"}],
+  ["Iogurte natural", ["iogurte","iogurte natural"], [51,4.1,1.9,0,3,1.9,0,52], 170, {un:"pote", tags:["lactose","origem_animal"]}],
+  ["Queijo muçarela", ["mucarela","mussarela","muzzarela","queijo mucarela","queijo"], [330,22.6,3,0,25.2,14.9,0,581], 15, {un:"fatia", fa:15, tags:["lactose","origem_animal"], nova:3}],
+  ["Queijo minas frescal", ["queijo minas","minas frescal","queijo branco"], [264,17.4,3.2,0,20.2,12,0,31], 30, {un:"fatia", fa:30, tags:["lactose","origem_animal"], nova:3}],
+  ["Requeijão", ["requeijao"], [257,9.6,2.4,0,23.4,13,0,558], 30, {un:"colher", cs:30, tags:["lactose","origem_animal"], nova:4}],
+  ["Manteiga", ["manteiga"], [726,0.4,0.1,0,82.4,48,0,579], 5, {un:"ponta de faca", cs:10, tags:["lactose","origem_animal"], nova:2}],
+  ["Ovo cozido", ["ovo","ovo cozido","ovos cozidos"], [146,13.3,0.6,0,9.5,2.9,0,146], 50, {un:"unidade", tags:["origem_animal"]}],
+  ["Ovo frito", ["ovo frito"], [240,15.6,1.2,0,18.6,5.1,0,180], 50, {un:"unidade", tags:["origem_animal"]}],
+  ["Omelete", ["omelete","omelete simples","ovo mexido","ovos mexidos"], [197,12,0.8,0,16,4.6,0,190], 100, {un:"porção", tags:["origem_animal"]}],
+  // suplementos
+  ["Whey protein", ["whey","whey protein","proteina em po"], [400,78,8,3,6,3.5,0,200], 30, {un:"scoop", sc:30, cs:15, tags:["lactose","origem_animal"], nova:4, fonte:"média de rótulos"}],
+  ["Creatina", ["creatina"], [0,0,0,0,0,0,0,0], 3, {un:"dose", sc:3, nova:4, fonte:"média de rótulos"}],
+  // cereais, pães e tubérculos
+  ["Aveia em flocos", ["aveia","aveia em flocos","farelo de aveia"], [394,13.9,66.6,0,8.5,1.5,9.1,5], 15, {un:"colher", cs:15, xi:80, tags:["gluten"]}],
+  ["Granola", ["granola"], [420,10,65,15,13,2,7,30], 15, {un:"colher", cs:15, xi:110, tags:["gluten"], nova:4, fonte:"média de rótulos"}],
+  ["Arroz branco", ["arroz","arroz branco"], [128,2.5,28.1,0,0.2,0.1,1.6,1], 100, {un:"porção", cs:25, es:90}],
+  ["Arroz integral", ["arroz integral"], [124,2.6,25.8,0,1,0.3,2.7,1], 100, {un:"porção", cs:25, es:90}],
+  ["Feijão carioca", ["feijao","feijao carioca"], [76,4.8,13.6,0,0.5,0.1,8.5,2], 140, {un:"concha", co:140, cs:25}],
+  ["Feijão preto", ["feijao preto"], [77,4.5,14,0,0.5,0.1,8.4,2], 140, {un:"concha", co:140, cs:25}],
+  ["Lentilha cozida", ["lentilha"], [93,6.3,16.3,0,0.5,0.1,7.9,1], 140, {un:"concha", co:140, cs:25}],
+  ["Grão-de-bico cozido", ["grao de bico"], [164,8.9,27.4,0,2.6,0.3,7.6,7], 100, {un:"porção", cs:25}],
+  ["Macarrão cozido", ["macarrao","massa","espaguete","penne"], [158,5.8,31,0,0.9,0.2,1.8,1], 150, {un:"prato", tags:["gluten"], nova:2}],
+  ["Pão francês", ["pao","pao frances","paozinho","pao de sal"], [300,8,58.6,0,3.1,0.9,2.3,648], 50, {un:"unidade", tags:["gluten"], nova:3}],
+  ["Pão de forma integral", ["pao integral","pao de forma","pao de forma integral"], [253,9.4,49.9,3,3.7,0.8,6.9,506], 25, {un:"fatia", fa:25, tags:["gluten"], nova:4}],
+  ["Pão de queijo", ["pao de queijo"], [363,5.1,34.2,0,24.6,9,0.6,773], 20, {un:"unidade", tags:["lactose","origem_animal"], nova:3}],
+  ["Tapioca", ["tapioca","goma de tapioca"], [240,0,60,0,0,0,0.5,1], 60, {un:"unidade"}],
+  ["Cuscuz de milho", ["cuscuz","cuscuz de milho"], [113,2.2,25.3,0,0.7,0.1,2.1,247], 150, {un:"porção"}],
+  ["Batata-doce cozida", ["batata doce"], [77,0.6,18.4,0,0.1,0,2.2,3], 150, {un:"unidade"}],
+  ["Batata cozida", ["batata","batata inglesa","pure"], [52,1.2,11.9,0,0,0,1.3,2], 140, {un:"unidade"}],
+  ["Mandioca cozida", ["mandioca","aipim","macaxeira"], [125,0.6,30.1,0,0.3,0.1,1.6,1], 100, {un:"pedaço"}],
+  // carnes e peixes
+  ["Frango grelhado", ["frango","peito de frango","file de frango","frango grelhado"], [159,32,0,0,2.5,0.7,0,50], 100, {un:"filé", tags:["origem_animal"]}],
+  ["Carne bovina grelhada", ["carne","bife","patinho","alcatra","carne vermelha"], [219,35.9,0,0,7.3,3.2,0,60], 100, {un:"bife", tags:["origem_animal"]}],
+  ["Carne moída refogada", ["carne moida"], [212,26.7,0,0,10.9,4.5,0,60], 100, {un:"porção", cs:25, tags:["origem_animal"]}],
+  ["Peixe grelhado", ["peixe","tilapia","file de peixe","merluza","salmao"], [128,26,0,0,2.7,0.8,0,60], 120, {un:"filé", tags:["origem_animal"]}],
+  ["Atum em conserva", ["atum","atum em lata"], [116,26,0,0,1,0.3,0,350], 60, {un:"porção", cs:20, tags:["origem_animal"], nova:3}],
+  ["Sardinha em conserva", ["sardinha"], [208,24.6,0,0,11.5,3.8,0,450], 60, {un:"porção", tags:["origem_animal"], nova:3}],
+  // legumes e verduras
+  ["Alface", ["alface","salada","folhas"], [11,1.3,1.7,0,0.2,0,1.8,4], 30, {un:"porção"}],
+  ["Tomate", ["tomate"], [15,1.1,3.1,0,0.2,0,1.2,1], 100, {un:"unidade", fa:15}],
+  ["Cenoura", ["cenoura"], [34,1.3,7.7,0,0.2,0,3.2,3], 70, {un:"unidade"}],
+  ["Brócolis cozido", ["brocolis"], [25,2.1,4.4,0,0.5,0.1,3.4,2], 60, {un:"porção"}],
+  ["Abobrinha cozida", ["abobrinha"], [15,1.1,3,0,0.2,0,1.6,1], 80, {un:"porção"}],
+  // gorduras, oleaginosas e sementes
+  ["Azeite de oliva", ["azeite","azeite de oliva"], [884,0,0,0,100,14.9,0,0], 13, {un:"colher", cs:13, l:0, nova:2}],
+  ["Pasta de amendoim", ["pasta de amendoim","manteiga de amendoim"], [590,25,20,0,50,10,6,15], 15, {un:"colher", cs:15, tags:["amendoim"], nova:3, fonte:"média de rótulos"}],
+  ["Amendoim torrado", ["amendoim"], [606,22.5,18.7,0,54,9.4,7.8,6], 30, {un:"punhado", tags:["amendoim"], nova:3}],
+  ["Castanha-do-pará", ["castanha","castanha do para","castanhas"], [643,14.5,15.1,0,63.5,15.3,7.9,1], 4, {un:"unidade"}],
+  ["Chia", ["chia","semente de chia"], [486,16.5,42,0,30.7,3.3,34.4,16], 10, {un:"colher", cs:10}],
+  ["Linhaça", ["linhaca"], [495,14.1,43.3,0,32.3,4.2,33.5,9], 10, {un:"colher", cs:10}],
+  // açúcares, doces e bebidas
+  ["Mel", ["mel"], [309,0,84,84,0,0,0,6], 15, {un:"colher", cs:15, tags:["origem_animal"]}],
+  ["Açúcar", ["acucar","acucar refinado","acucar mascavo"], [387,0,99.5,99.5,0,0,0,1], 5, {un:"colher de chá", cs:12, nova:2}],
+  ["Chocolate ao leite", ["chocolate","chocolate ao leite"], [540,7.2,59.6,50,30.3,18.1,2.2,64], 25, {un:"barrinha", tags:["lactose","origem_animal"], nova:4}],
+  ["Cacau em pó 100%", ["cacau","cacau em po"], [370,20,45,0,12,7,30,20], 6, {un:"colher", cs:6, nova:2, fonte:"média de rótulos"}],
+  ["Café sem açúcar", ["cafe","cafe preto","cafezinho","expresso"], [4,0.3,0.5,0,0,0,0,1], 50, {l:1, un:"xícara", xi:50}],
+  ["Suco de laranja natural", ["suco de laranja","suco"], [33,0.7,7.6,0,0.1,0,0.2,1], 200, {l:1, un:"copo"}],
+  ["Água de coco", ["agua de coco"], [22,0,5.3,0,0,0,0.1,7], 200, {l:1, un:"copo"}],
+  ["Água", ["agua"], [0,0,0,0,0,0,0,0], 200, {l:1, un:"copo"}]
+].map(([nome, alias, n, u, o]) => ({nome, alias, u, l:!!o.l, un:o.un||"unidade", cs:o.cs, fa:o.fa, xi:o.xi, sc:o.sc, co:o.co, es:o.es,
+  nova:o.nova ?? 1, tags:o.tags||[], fonte:o.fonte||"TACO",
+  n:{kcal:n[0], prot:n[1], carb:n[2], acucarAdic:n[3], gord:n[4], gordSat:n[5], gordTrans:0, fibra:n[6], sodio:n[7]}}));
+
+const semAcento = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
+const NUM_PALAVRA = {um:1, uma:1, dois:2, duas:2, tres:3, quatro:4, cinco:5, seis:6, sete:7, oito:8, nove:9, dez:10, meio:0.5, meia:0.5};
+const ALIAS = ALIMENTOS.flatMap(a => a.alias.map(x => ({a, x: semAcento(x)}))).sort((p, q) => q.x.length - p.x.length);
+
+function acharAlimento(txt){
+  for (const {a, x} of ALIAS){
+    const re = new RegExp(`(^|[^a-z])${x.replace(/ /g, "s? (de |do |da )?")}s?([^a-z]|$)`);
+    if (re.test(txt)) return a;
+  }
+  return null;
+}
+
+/* Lê um pedaço como "2 colheres de aveia" e devolve {alimento, gramas} ou {desconhecido} */
+function lerPedaco(original){
+  let t = " " + semAcento(original).replace(/(\d),(\d)/g, "$1.$2") + " ";
+  let qtd = null, gramas = null, medida = null;
+  const mG = t.match(/(\d+(?:\.\d+)?)\s*(kg|g|gr|gramas?|ml|l|litros?)\b/);
+  if (mG){ const v = parseFloat(mG[1]); gramas = /^(kg|l|litro)/.test(mG[2]) ? v*1000 : v; t = t.replace(mG[0], " "); }
+  const mF = t.match(/\b(\d+)\s*\/\s*(\d+)\b/);
+  const mN = t.match(/\b(\d+(?:\.\d+)?)\b/);
+  const mW = t.match(/\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|meio|meia)\b/);
+  if (gramas == null){
+    if (mF) qtd = parseInt(mF[1]) / parseInt(mF[2]);
+    else if (mN) qtd = parseFloat(mN[1]);
+    else if (mW) qtd = NUM_PALAVRA[mW[1]];
+    if (/\be meia\b|\be meio\b/.test(t) && qtd) qtd += 0.5;
+  }
+  const medidas = [
+    ["cc", /colher(es|inha|inhas)? (de )?(cha|cafe)\b/], ["cs", /colher(es)?( de sopa| cheia| rasa)?\b/],
+    ["sc", /\b(scoops?|medidas?|dosador(es)?|dose)\b/], ["xi", /\bxicaras?\b/], ["copo", /\bcopos?\b/],
+    ["fa", /\bfatias?\b/], ["co", /\bconchas?\b/], ["es", /\bescumadeiras?\b/], ["pote", /\bpotes?\b/], ["lata", /\blatas?\b/],
+    ["un", /\b(unidades?|un|filés?|files?|bifes?|pedacos?|porcoes?|porcao|pratos?|punhados?)\b/]
+  ];
+  for (const [k, re] of medidas){ if (re.test(t)){ medida = k; t = t.replace(re, " "); break; } }
+  const a = acharAlimento(t);
+  if (!a) return {desconhecido: original.trim()};
+  if (gramas == null){
+    const q = qtd ?? 1;
+    const base = {
+      cs: a.cs ?? 15, cc: (a.cs ?? 15) / 3, sc: a.sc ?? a.cs ?? 30, xi: a.xi ?? (a.l ? 240 : 120), copo: a.l ? 200 : (a.xi ?? 200),
+      fa: a.fa ?? a.u, co: a.co ?? 140, es: a.es ?? 90, pote: a.u, lata: a.l ? 350 : a.u, un: a.u
+    }[medida] ?? a.u;
+    gramas = Math.round(q * base * 10) / 10;
+  }
+  return {alimento: a, gramas};
+}
+
+/* Divide a frase em itens: "shake de leite, banana, aveia e whey" */
+function dividirFrase(frase){
+  let t = " " + frase.replace(/\n/g, ",") + " ";
+  t = t.replace(/^\s*(eu\s+)?(comi|tomei|bebi|almocei|jantei|lanchei|vou (comer|tomar|beber|fazer|preparar)|fiz|quero( fazer)?)\s+/i, " ");
+  t = t.replace(/\b(um|uma)\s+(shake|vitamina|smoothie|batida|lanche|prato|salada de frutas|mingau)\s+(de|com)\s+/i, " ");
+  t = t.replace(/^\s*(shake|vitamina|smoothie|batida|mingau|prato|lanche)\s+(de|com)\s+/i, " ");
+  return t.split(/,|;|\+|\s+e\s+|\s+com\s+|\s+mais\s+/i).map(s => s.trim()).filter(s => s && !/^(de|com|e)$/i.test(s));
+}
+
+function nomeRefeicao(frase, itens){
+  const m = semAcento(frase).match(/\b(shake|vitamina|smoothie|batida|mingau|salada|lanche|cafe da manha|almoco|jantar)\b/);
+  if (m){
+    const base = {shake:"Shake", vitamina:"Vitamina", smoothie:"Smoothie", batida:"Batida", mingau:"Mingau", salada:"Salada", lanche:"Lanche", "cafe da manha":"Café da manhã", almoco:"Almoço", jantar:"Jantar"}[m[1]];
+    return `${base} de ${itens.map(i => i.nome.split(" ")[0].toLowerCase()).slice(0,4).join(", ")}`.slice(0, 60);
+  }
+  if (itens.length === 1) return itens[0].nome;
+  return itens.map(i => i.nome).slice(0, 3).join(" + ").slice(0, 60);
+}
+
+/* Junta os itens num "produto" com valores por 100 g da mistura */
+function montarRefeicao(nome, itens){
+  const total = itens.reduce((s, i) => s + i.g, 0) || 1;
+  const n = {};
+  for (const k of ["kcal","prot","carb","acucar","acucarAdic","gord","gordSat","gordTrans","fibra","sodio"]){
+    let soma = 0, tem = false;
+    for (const i of itens){ const v = num(i.n[k]); if (v != null){ soma += v * i.g / 100; tem = true; } }
+    n[k] = tem ? soma / total * 100 : null;
+  }
+  const tags = [...new Set(itens.flatMap(i => i.tags || []))];
+  // processamento da refeição: ultraprocessada só se mais da metade das calorias vier de itens ultraprocessados
+  const kcalDe = i => (num(i.n.kcal) || 0) * i.g / 100;
+  const kcalTot = itens.reduce((s, i) => s + kcalDe(i), 0) || 1;
+  const parte4 = itens.filter(i => (i.nova || 1) === 4).reduce((s, i) => s + kcalDe(i), 0) / kcalTot;
+  const nova = parte4 >= 0.5 ? 4 : parte4 > 0 ? 3 : Math.max(...itens.map(i => i.nova || 1));
+  return {nome, refeicao:true, itens, liquido:itens.every(i => i.l), porcao:Math.round(total), n, tags, nova, ultra: nova === 4,
+    aditivos: itens.every(i => (i.nova || 1) <= 2) ? [] : null};
+}
+
+
 /* ---------- estado ---------- */
 const PERFIL_EXEMPLO = {id:"p1", nome:"Você", sexo:"m", idade:28, peso:75, altura:178, ativ:1.55, obj:"massa", restr:[], exemplo:true};
 let perfis = store.get("rc2.perfis", null);
@@ -655,6 +845,9 @@ function renderResultado(){
     </div>
     ${(r.lupas.length || atual.ns || r.nova) ? `<div class="badges">${r.lupas.map(t=>`<span class="lupa">${lupaSVG}${esc(t)}</span>`).join("")}${nutriScoreHTML(atual.ns)}${novaHTML(r.nova)}</div>` : ""}
     ${r.avisos.map(a=>`<div class="warn"><span aria-hidden="true">⚠︎</span><span>${esc(a)}</span></div>`).join("")}
+    ${atual.itens ? `<div><h3 style="margin-bottom:8px">Ingredientes · total ${fmt(atual.porcao,0)} ${atual.liquido?"ml":"g"} · ${fmt(num(atual.n.kcal)*atual.porcao/100,0)} kcal · ${fmt(num(atual.n.prot)*atual.porcao/100,0)} g de proteína</h3>
+      <div class="ingr">${atual.itens.map((it,i) => `<div class="ing"><span class="nm">${esc(it.nome)}${it.estimado?'<span class="est">estimado</span>':""}<small>${fmt(num(it.n.kcal)*it.g/100,0)} kcal · ${fmt(num(it.n.prot)*it.g/100,1)} g prot · ${esc(it.fonte||"")}</small></span><input type="number" min="0" step="any" value="${Math.round(it.g*10)/10}" data-ing="${i}" aria-label="Quantidade de ${esc(it.nome)}"><span class="u">${it.l?"ml":"g"}</span><button class="x" type="button" data-rm="${i}" aria-label="Remover ${esc(it.nome)}">×</button></div>`).join("")}</div>
+      <form class="row" id="ingAdd" autocomplete="off" style="margin-top:8px"><input type="text" id="ingTexto" placeholder="Adicionar ingrediente (ex.: 1 colher de mel)" style="flex:1 1 180px" aria-label="Adicionar ingrediente"><button class="btn sm" type="submit">Adicionar</button></form></div>` : ""}
     <div class="procon">${lista(r.pros,"pros","Nenhum destaque positivo.")}${lista(r.contras,"cons","Nenhum ponto de atenção.")}</div>
     <div class="acoes">
       <button class="btn sm" type="button" id="aAlt">Ver opções melhores</button>
@@ -668,13 +861,31 @@ function renderResultado(){
       <span class="small muted">${atual.liquido?"ml":"g"}</span>
       <button class="btn sm primary" type="submit">Adicionar ao diário</button>
     </form>
-    <div><h3 style="margin-bottom:8px">Aditivos</h3>${aditHTML}</div>
+    ${atual.refeicao ? "" : `<div><h3 style="margin-bottom:8px">Aditivos</h3>${aditHTML}</div>`}
     <div class="tablewrap"><div class="tabela">
       <div class="tt">Informação nutricional${atual.porcao?` · porção de ${fmt(atual.porcao,0)} ${atual.liquido?"ml":"g"}`:""}</div>
       <table><thead><tr><th></th><th>${r.un}</th><th>Porção</th><th>Meta diária</th></tr></thead><tbody>${linhas}</tbody></table>
     </div></div>
-    <div class="row"><button class="btn sm ghost" type="button" id="editAtual">Corrigir valores</button></div>`;
-  $("editAtual").onclick = () => abrirEditor(atual);
+    ${atual.refeicao ? `<p class="small muted">Valores de alimentos da tabela TACO (Unicamp). Itens marcados como “estimado” foram calculados pela IA; ajuste a quantidade se precisar.</p>` : `<div class="row"><button class="btn sm ghost" type="button" id="editAtual">Corrigir valores</button></div>`}`;
+  if ($("editAtual")) $("editAtual").onclick = () => abrirEditor(atual);
+  if (atual.itens){
+    const refazer = itens => {
+      if (!itens.length){ setStatus("A refeição ficou sem ingredientes.","err"); return; }
+      atual = {...montarRefeicao(atual.nome, itens)}; guardarNoCatalogo(atual); salvar(); renderResultado(); renderHist();
+    };
+    el.querySelectorAll("input[data-ing]").forEach(inp => inp.onchange = () => {
+      const v = num(inp.value); if (v == null || v < 0) return;
+      const itens = atual.itens.map((it,i) => i === +inp.dataset.ing ? {...it, g:v} : it);
+      refazer(itens);
+    });
+    el.querySelectorAll("button[data-rm]").forEach(b => b.onclick = () => refazer(atual.itens.filter((_,i) => i !== +b.dataset.rm)));
+    $("ingAdd").onsubmit = async e => {
+      e.preventDefault();
+      const t = $("ingTexto").value.trim(); if (!t) return;
+      const novos = await interpretarItens(dividirFrase(t));
+      if (novos.length) refazer([...atual.itens, ...novos]);
+    };
+  }
   if ($("aRenomear")) $("aRenomear").onclick = abrirRenomear;
   $("aFav").onclick = () => { favs = isFav ? favs.filter(x => x !== k) : [k, ...favs]; guardarNoCatalogo(atual); salvar(); renderResultado(); renderListas(); };
   $("aCompra").onclick = () => {
@@ -1143,6 +1354,79 @@ async function processarFotos(files){
     if (["sem_servidor","sem_chave","chave_invalida","modelo","not_granted"].includes(err?.code)) abrirEditor(null);
   }finally{ $("photoBtn").removeAttribute("aria-busy"); }
 }
+
+/* ---------- comida digitada ---------- */
+const PROMPT_ALIMENTOS = `Você é um assistente de nutrição brasileiro. O usuário descreveu alimentos que comeu ou vai preparar.
+Para CADA item da lista abaixo, estime a quantidade e os valores nutricionais. Use a Tabela Brasileira de Composição de Alimentos (TACO) quando o alimento existir nela; senão, use valores médios de produtos vendidos no Brasil.
+Responda SOMENTE com um objeto JSON neste formato:
+{"itens":[{"texto":"o texto original do item","nome":"nome curto do alimento","gramas":120,"liquido":false,"nova":1,"tags":["lactose"],
+ "por100":{"kcal":0,"prot":0,"carb":0,"acucarAdic":0,"gord":0,"gordSat":0,"fibra":0,"sodio":0}}]}
+Regras:
+- "gramas": quantidade total do item em g (ou ml, se líquido). Se o usuário não disse a quantidade, use uma porção caseira comum.
+- "por100": valores por 100 g (ou 100 ml). "sodio" em mg. "acucarAdic" é açúcar adicionado (0 em frutas e alimentos in natura).
+- "nova": grau de processamento NOVA de 1 a 4.
+- "tags": "lactose", "gluten", "amendoim", "origem_animal" quando se aplicar.
+- Se um item não for comida, devolva "nome": null para ele.
+Itens:
+`;
+async function estimarIA(textos){
+  let d;
+  if (sample){
+    d = await sample.json(PROMPT_ALIMENTOS + textos.map((t,i) => `${i+1}. ${t}`).join("\n"), {modelTier:"quick"});
+  } else {
+    let res;
+    try{ res = await fetch("api/alimentos", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({itens:textos})}); }
+    catch(e){ throw {code:"sem_servidor"}; }
+    if (res.status === 404 || res.status === 405) throw {code:"sem_servidor"};
+    let j = null; try{ j = await res.json(); }catch(e){}
+    if (!res.ok) throw {code: j?.erro || "servidor", detalhe: j?.detalhe};
+    d = j;
+  }
+  return (Array.isArray(d?.itens) ? d.itens : []).filter(x => x && x.nome && x.por100 && num(x.gramas) > 0).map(x => ({
+    nome: String(x.nome).slice(0, 50), g: num(x.gramas), l: !!x.liquido, estimado: true, fonte: "estimado pela IA",
+    nova: [1,2,3,4].includes(Number(x.nova)) ? Number(x.nova) : 3,
+    tags: Array.isArray(x.tags) ? x.tags.filter(t => ["lactose","gluten","amendoim","origem_animal"].includes(t)) : [],
+    n: Object.fromEntries(["kcal","prot","carb","acucarAdic","gord","gordSat","fibra","sodio"].map(k => [k, num(x.por100[k])]))
+  }));
+}
+/* Transforma pedaços de texto em ingredientes: tabela primeiro, IA para o resto */
+async function interpretarItens(pedacos){
+  const lidos = pedacos.map(lerPedaco);
+  const itens = lidos.filter(p => p.alimento).map(p => ({nome:p.alimento.nome, g:p.gramas, l:p.alimento.l, n:{...p.alimento.n}, tags:p.alimento.tags, nova:p.alimento.nova, fonte:p.alimento.fonte}));
+  const faltam = lidos.filter(p => p.desconhecido).map(p => p.desconhecido);
+  if (faltam.length){
+    setStatus(`Estimando com IA: ${esc(faltam.join(", "))}…`);
+    try{
+      const ia = await estimarIA(faltam);
+      itens.push(...ia);
+      const naoAchou = faltam.length - ia.length;
+      setStatus(naoAchou > 0 ? `Não consegui identificar ${naoAchou} item(ns). Confira a lista de ingredientes.` : "", naoAchou > 0 ? "err" : "");
+    }catch(err){
+      const motivo = {sem_servidor:"a estimativa por IA precisa do servidor do app", rate_limited:"o limite de uso da IA foi atingido", not_granted:"o uso do Claude não foi permitido"}[err?.code] || "a IA não respondeu";
+      setStatus(`Não reconheci: ${esc(faltam.join(", "))} (${motivo}). Escreva de outro jeito, use “Digitar valores” ou fotografe o rótulo.`, "err");
+    }
+  } else setStatus("");
+  return itens;
+}
+$("textoForm").onsubmit = async e => {
+  e.preventDefault();
+  const frase = $("textoComida").value.trim();
+  if (!frase){ $("textoComida").focus(); return; }
+  const pedacos = dividirFrase(frase);
+  if (!pedacos.length) return;
+  $("textoBtn").disabled = true;
+  try{
+    const itens = await interpretarItens(pedacos);
+    if (!itens.length) return;
+    $("textoComida").value = "";
+    salvarAtual(montarRefeicao(nomeRefeicao(frase, itens), itens));
+  } finally { $("textoBtn").disabled = false; }
+};
+["1 banana","Shake de 300 ml de leite, 1 banana, 2 colheres de aveia e 1 scoop de whey","Arroz, feijão e frango","2 ovos e 1 pão francês com manteiga"].forEach(t => {
+  const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.textContent = t;
+  b.onclick = () => { $("textoComida").value = t; $("textoForm").requestSubmit(); };
+  $("textoExemplos").append(b);
+});
 
 /* ---------- perfis ---------- */
 let objSel, restrSel;
