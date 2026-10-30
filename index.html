@@ -195,16 +195,21 @@ details summary{cursor:pointer;font-weight:600}
       <div class="inputs">
         <label class="btn big primary" id="photoBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
-          Fotografar rótulo
-          <span class="sub">tabela nutricional ou código de barras</span>
+          Tirar foto
+          <span class="sub">do rótulo ou do código de barras</span>
           <input type="file" id="photoInput" accept="image/*" capture="environment" multiple>
         </label>
-        <button class="btn big" id="manualBtn" type="button">
-          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>
-          Digitar valores
-          <span class="sub">por 100 g ou 100 ml</span>
-        </button>
+        <label class="btn big" id="galleryBtn">
+          <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><circle cx="9" cy="10" r="2"/><path d="M21 17l-5-5-9 8"/></svg>
+          Da galeria
+          <span class="sub">foto que já está no celular</span>
+          <input type="file" id="galleryInput" accept="image/*" multiple>
+        </label>
       </div>
+      <button class="btn" id="manualBtn" type="button">
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/></svg>
+        Digitar os valores do rótulo
+      </button>
       <form class="row" id="barcodeForm" autocomplete="off">
         <input type="text" id="barcode" inputmode="numeric" placeholder="Código de barras (EAN)" style="flex:1 1 160px" aria-label="Código de barras">
         <button class="btn" type="button" id="scanBtn" aria-label="Escanear código de barras com a câmera">
@@ -1097,10 +1102,12 @@ async function lerRotulo(files){
   return j;
 }
 
-$("photoInput").addEventListener("change", async e => {
+["photoInput","galleryInput"].forEach(id => $(id).addEventListener("change", e => {
   const files = [...e.target.files];
   e.target.value = "";
-  if (!files.length) return;
+  if (files.length) processarFotos(files);
+}));
+async function processarFotos(files){
   setStatus("Procurando código de barras na foto…");
   for (const f of files){
     const code = await codigoDaFoto(f);
@@ -1135,7 +1142,7 @@ $("photoInput").addEventListener("change", async e => {
     setStatus(esc(msgs[err?.code] || "A leitura falhou. Tente de novo ou digite os valores.") + (err?.detalhe ? `<br><small>Detalhe técnico: ${esc(err.detalhe)}</small>` : ""),"err");
     if (["sem_servidor","sem_chave","chave_invalida","modelo","not_granted"].includes(err?.code)) abrirEditor(null);
   }finally{ $("photoBtn").removeAttribute("aria-busy"); }
-});
+}
 
 /* ---------- perfis ---------- */
 let objSel, restrSel;
