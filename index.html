@@ -191,6 +191,7 @@ details summary{cursor:pointer;font-weight:600}
         <h2>Ler um produto</h2>
         <label class="para"><span>Para</span><select id="perfilRapido" aria-label="Analisar para qual perfil"></select></label>
       </div>
+      <label class="field"><span>Nome do produto (opcional, para a foto)</span><input type="text" id="fotoNome" maxlength="80" placeholder="Ex.: Iogurte grego da marca X"></label>
       <div class="inputs">
         <label class="btn big primary" id="photoBtn">
           <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>
@@ -641,7 +642,7 @@ function renderResultado(){
     <div class="result-head">
       <div class="dial" style="--v:${r.nota};--c:${corNota(r.nota)}" role="img" aria-label="Nota ${fmt(r.nota)} de 10"><div><span><b>${fmt(r.nota)}</b><small>de 10</small></span></div></div>
       <div style="min-width:0;display:flex;flex-direction:column;gap:4px">
-        <p class="prodname">${esc(atual.nome||"Produto sem nome")}${atual.exemplo?'<span class="tag-ex">exemplo</span>':""}</p>
+        <div id="nomeBox"><p class="prodname">${esc(atual.nome||"Produto sem nome")}${atual.exemplo?'<span class="tag-ex">exemplo</span>':` <button class="btn sm ghost" type="button" id="aRenomear" style="padding:2px 8px;font-size:.78rem">Renomear</button>`}</p></div>
         <span><span class="faixa" style="background:${fxCor}">${fx}</span></span>
         <p class="verdict">${esc(r.frase)}</p>
         <p class="small muted">Para ${esc(p.nome)} · ${OBJETIVOS[p.obj].label.toLowerCase()}${p.exemplo?" (perfil de exemplo)":""}</p>
@@ -669,6 +670,7 @@ function renderResultado(){
     </div></div>
     <div class="row"><button class="btn sm ghost" type="button" id="editAtual">Corrigir valores</button></div>`;
   $("editAtual").onclick = () => abrirEditor(atual);
+  if ($("aRenomear")) $("aRenomear").onclick = abrirRenomear;
   $("aFav").onclick = () => { favs = isFav ? favs.filter(x => x !== k) : [k, ...favs]; guardarNoCatalogo(atual); salvar(); renderResultado(); renderListas(); };
   $("aCompra").onclick = () => {
     if (naLista) compras = compras.filter(c => !(c.k === k && !c.feito));
@@ -686,6 +688,37 @@ function renderResultado(){
 }
 
 function guardarNoCatalogo(prod){ if (!prod.exemplo) catalogo[chave(prod)] = prod; }
+
+/* renomear: troca o nome e atualiza histórico, favoritos, compras e diário que apontam para o produto */
+function renomear(prod, novo){
+  const kVelha = chave(prod);
+  const atualizado = {...prod, nome: novo};
+  const kNova = chave(atualizado);
+  if (kVelha !== kNova) delete catalogo[kVelha];
+  catalogo[kNova] = atualizado;
+  historico = historico.map(h => h.k === kVelha ? {...h, k:kNova} : h).filter((h,i,a) => a.findIndex(x => x.k === h.k) === i);
+  favs = [...new Set(favs.map(k => k === kVelha ? kNova : k))];
+  compras = compras.map(c => c.k === kVelha ? {...c, k:kNova, nome:novo} : c);
+  if (atual && chave(atual) === kVelha) atual = atualizado;
+  salvar();
+  return atualizado;
+}
+function abrirRenomear(){
+  const box = $("nomeBox");
+  if (!box || !atual || atual.exemplo) return;
+  box.innerHTML = `<form class="row" id="renomearForm" autocomplete="off" style="gap:6px">
+    <input type="text" id="novoNome" maxlength="80" value="${esc(atual.nome||"")}" aria-label="Nome do produto" style="flex:1 1 160px">
+    <button class="btn sm primary" type="submit">Salvar nome</button>
+    <button class="btn sm ghost" type="button" id="renomearCancelar">Cancelar</button></form>`;
+  const inp = $("novoNome"); inp.focus(); inp.select();
+  $("renomearCancelar").onclick = () => renderResultado();
+  $("renomearForm").onsubmit = e => {
+    e.preventDefault();
+    const novo = inp.value.trim();
+    if (novo && novo !== atual.nome) renomear(atual, novo);
+    renderResultado(); renderHist(); renderListas();
+  };
+}
 function abrirProduto(prod, rolar = true){
   atual = prod; salvar();
   $("altCard").hidden = true; $("cmpCard").hidden = true;
@@ -1080,12 +1113,15 @@ $("photoInput").addEventListener("change", async e => {
     if (!d || d.legivel === false || !d.por100){ setStatus("Não deu para ler a tabela nessa foto. Tente com mais luz, sem reflexo e com a tabela inteira no quadro.","err"); return; }
     const n = {}; NUTS.forEach(([k]) => n[k] = num(d.por100[k]));
     const nova = [1,2,3,4].includes(Number(d.nova)) ? Number(d.nova) : (d.ultraprocessado === true ? 4 : null);
-    const prod = {nome: d.nome || "Produto fotografado", categoria: d.categoria || null, liquido: !!d.liquido, porcao: num(d.porcao), nova, ultra: nova === 4,
+    const nomeDigitado = $("fotoNome").value.trim();
+    const prod = {nome: nomeDigitado || d.nome || "Produto fotografado", categoria: d.categoria || null, liquido: !!d.liquido, porcao: num(d.porcao), nova, ultra: nova === 4,
       tags: Array.isArray(d.tags) ? d.tags.filter(t => ["lactose","gluten","amendoim","origem_animal"].includes(t)) : [],
       aditivos: Array.isArray(d.aditivos) ? [...new Set(d.aditivos.map(normAditivo).filter(Boolean))] : null, n};
     if (n.kcal == null){ setStatus("Li o rótulo, mas faltou o valor energético. Confira os números abaixo.","err"); abrirEditor(prod,"Confira os valores lidos"); return; }
     setStatus("Rótulo lido. Confira os números na tabela e corrija se algo saiu diferente da embalagem.","ok");
+    $("fotoNome").value = "";
     salvarAtual(prod);
+    if (!nomeDigitado) abrirRenomear();
   }catch(err){
     const msgs = {not_granted:"Você não permitiu o uso do Claude nesta página. Digite os valores do rótulo.",
       rate_limited:"O limite de leituras foi atingido. Espere um pouco e tente de novo, ou digite os valores.",
