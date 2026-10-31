@@ -433,7 +433,9 @@ details summary{cursor:pointer;font-weight:600}
         </select></label>
       <div><h3 style="margin-bottom:8px">Objetivo</h3><div class="chips" id="p-obj"></div></div>
       <div><h3 style="margin-bottom:8px">Restrições alimentares</h3><div class="chips" id="p-restr"></div></div>
-      <div><h3 style="margin-bottom:4px">Alergias</h3><p class="small muted" style="margin-bottom:8px">Produto que contém o alérgeno fica com nota 0; “pode conter traços” fica com nota máxima 3.</p><div class="chips" id="p-alerg"></div></div>
+      <div><h3 style="margin-bottom:4px">Alergias</h3><p class="small muted" style="margin-bottom:8px">Produto que contém o alérgeno fica com nota 0; “pode conter traços” fica com nota máxima 3.</p><div class="chips" id="p-alerg"></div>
+        <div class="row" style="margin-top:10px"><input type="text" id="p-outraAlerg" maxlength="40" placeholder="Outra alergia (ex.: morango, kiwi, mostarda)" aria-label="Outra alergia" style="flex:1 1 180px"><button class="btn sm" type="button" id="p-outraAdd">Adicionar</button></div>
+        <div class="chips" id="p-outras" style="margin-top:8px"></div></div>
       <div class="row">
         <button class="btn primary" type="submit">Salvar perfil</button>
         <button class="btn danger ghost" type="button" id="perfilExcluir">Excluir perfil</button>
@@ -521,7 +523,8 @@ const ALERGIAS = {
   peixe:{label:"Peixe", tags:["peixe"]},
   crustaceos:{label:"Crustáceos e frutos do mar", tags:["crustaceos"]},
   gergelim:{label:"Gergelim", tags:["gergelim"]},
-  sulfitos:{label:"Sulfitos", tags:["sulfitos"]}
+  sulfitos:{label:"Sulfitos", tags:["sulfitos"]},
+  tartrazina:{label:"Corante tartrazina (amarelo)", tags:["tartrazina"]}
 };
 const TAGS_VALIDAS = ["leite","lactose","gluten","ovo","soja","amendoim","castanhas","peixe","crustaceos","gergelim","sulfitos","origem_animal"];
 const ADIT_SULFITO = ["e220","e221","e222","e223","e224","e225","e226","e227","e228"];
@@ -951,6 +954,7 @@ function avaliar(prod, p){
   const tags = new Set(prod.tags || []);
   if ((prod.aditivos||[]).some(a => ADIT_ANIMAL.includes(a))) tags.add("origem_animal");
   if ((prod.aditivos||[]).some(a => ADIT_SULFITO.includes(a))) tags.add("sulfitos");
+  if ((prod.aditivos||[]).includes("e102")) tags.add("tartrazina");
   let conflito = false;
   for (const r of (p.restr||[])){
     const R = RESTR[r];
@@ -971,6 +975,21 @@ function avaliar(prod, p){
       traco = true; const q = quemPode(A.tags);
       avisos.unshift(`Pode conter traços de ${A.label.toLowerCase()}${q.length ? " (" + q.join(", ") + ")" : ""}. Para alergia, evite.`);
     }
+  }
+  // alergias digitadas: procura a palavra no nome, na lista de ingredientes e nos itens da refeição
+  const outras = (p.alergiasOutras || []).filter(Boolean);
+  if (outras.length){
+    const texto = textoDoProduto(prod);
+    const iTraco = texto.search(/pode conter|tracos de|contem tracos/);
+    const temLista = !!prod.ingredientes || !!prod.itens;
+    const semLista = [];
+    for (const termo of outras){
+      const pos = posicaoPalavra(texto, termo);
+      if (pos >= 0 && (iTraco < 0 || pos < iTraco)){ alergia = true; perigos.push(`ALERGIA: contém ${termo}`); }
+      else if (pos >= 0){ traco = true; avisos.unshift(`Pode conter traços de ${termo}. Para alergia, evite.`); }
+      else if (!temLista) semLista.push(termo);
+    }
+    if (semLista.length) avisos.unshift(`Não deu para conferir ${semLista.join(", ")}: este produto não tem a lista de ingredientes. Fotografe a lista ou confira o rótulo.`);
   }
   const semInfoAlergia = (p.alergias || []).length > 0 && !alergia && !prod.alergInfo;
   if (semInfoAlergia) avisos.unshift("Sem informação de alérgicos para este produto. Confira o quadro “ALÉRGICOS” do rótulo antes de consumir.");
@@ -1508,6 +1527,22 @@ $("compraForm").onsubmit = e => {
 };
 $("limparComprados").onclick = () => { compras = compras.filter(c => !c.feito); salvar(); renderListas(); renderResultado(); };
 
+/* texto onde procurar alergias digitadas */
+function textoDoProduto(prod){
+  const partes = [prod.nome, prod.categoria, prod.ingredientes];
+  for (const i of (prod.itens || [])){
+    const a = ALIMENTOS.find(x => x.nome === i.nome);
+    partes.push(i.nome, a ? a.alias.join(" ") : "");
+  }
+  return semAcento(partes.filter(Boolean).join(" | "));
+}
+function posicaoPalavra(texto, termo){
+  const t = semAcento(termo).trim().replace(/[^a-z0-9 ]/g, "").replace(/(es|s)$/, "");
+  if (t.length < 3) return -1;
+  const m = new RegExp(`(^|[^a-z])${t.replace(/\s+/g, "\\s+")}(s|es)?([^a-z]|$)`).exec(texto);
+  return m ? m.index : -1;
+}
+
 /* ---------- exemplos ---------- */
 EXEMPLOS.forEach(ex => {
   const b = document.createElement("button");
@@ -1597,6 +1632,7 @@ function deOFF(code, pr){
     ns: /^[a-e]$/.test(ns) ? ns : null,
     categoria: catTxt[catTxt.length-1] || (catTag ? catTag.replace(/^\w\w:/,"").replace(/-/g," ") : null), catTag,
     aditivos: Array.isArray(pr.additives_tags) ? [...new Set(pr.additives_tags.map(normAditivo).filter(Boolean))] : null,
+    ingredientes: pr.ingredients_text ? String(pr.ingredients_text).slice(0, 3000) : null,
     tags: [...new Set(tags)], tracos: tracosOFF, alergInfo: Array.isArray(pr.allergens_tags) && (pr.allergens_tags.length > 0 || Array.isArray(pr.traces_tags) || !!pr.ingredients_text),
     n:{kcal:g("energy-kcal") ?? (g("energy")!=null ? g("energy")/4.184 : null), prot:g("proteins"), carb:g("carbohydrates"), acucar:g("sugars"),
        acucarAdic:g("added-sugars"), gord:g("fat"), gordSat:g("saturated-fat"), gordTrans:g("trans-fat"), fibra:g("fiber"), sodio}
@@ -1668,7 +1704,7 @@ async function codigoDaFoto(file){
 let sample = null;
 const PROMPT = `Você recebe foto(s) do rótulo de um alimento vendido no Brasil (tabela nutricional e, talvez, lista de ingredientes e frente da embalagem).
 Extraia os dados e responda SOMENTE com um objeto JSON neste formato:
-{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["leite"],"pode_conter":["amendoim"],"aditivos":["e330"],
+{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["leite"],"pode_conter":["amendoim"],"aditivos":["e330"],"ingredientes":"texto da lista de ingredientes",
  "por100":{"kcal":0,"prot":0,"carb":0,"acucar":0,"acucarAdic":0,"gord":0,"gordSat":0,"gordTrans":0,"fibra":0,"sodio":0}}
 Regras:
 - "por100" é por 100 g (sólido) ou 100 ml (líquido). Se o rótulo só mostra por porção, converta para 100 usando o tamanho da porção.
@@ -1679,6 +1715,7 @@ Regras:
 - "pode_conter": códigos do texto "PODE CONTER..." ou "contém traços de..." do rótulo, com os mesmos códigos. Lista vazia se o rótulo não fala nisso; null se a foto não mostra essa parte do rótulo.
 - "nova": grau de processamento NOVA de 1 a 4 (4 = ultraprocessado: aromatizantes, corantes, emulsificantes, xarope de glicose, gordura hidrogenada etc.); null se não houver lista de ingredientes.
 - "aditivos": códigos INS dos aditivos da lista de ingredientes, no formato "e" + número (ex.: "INS 330" vira "e330", "INS 150d" vira "e150d"). Se o aditivo aparece só pelo nome, use o código dele. Lista vazia se a lista de ingredientes não tem aditivos; null se a foto não mostra a lista de ingredientes.
+- "ingredientes": copie a lista de ingredientes e o quadro de alérgicos como aparecem no rótulo (incluindo "PODE CONTER..."); null se a foto não mostra.
 - Se a imagem não for um rótulo legível, responda {"legivel":false}.`;
 
 (async () => {
@@ -1737,6 +1774,7 @@ async function processarFotos(files){
       tags: Array.isArray(d.tags) ? d.tags.filter(t => TAGS_VALIDAS.includes(t)) : [],
       tracos: Array.isArray(d.pode_conter) ? d.pode_conter.filter(t => TAGS_VALIDAS.includes(t)) : [],
       alergInfo: Array.isArray(d.tags) && Array.isArray(d.pode_conter),
+      ingredientes: typeof d.ingredientes === "string" && d.ingredientes.trim() ? d.ingredientes.slice(0, 3000) : null,
       aditivos: Array.isArray(d.aditivos) ? [...new Set(d.aditivos.map(normAditivo).filter(Boolean))] : null, n};
     if (n.kcal == null){ setStatus("Li o rótulo, mas faltou o valor energético. Confira os números abaixo.","err"); abrirEditor(prod,"Confira os valores lidos"); return; }
     setStatus("Rótulo lido. Confira os números na tabela e corrija se algo saiu diferente da embalagem.","ok");
@@ -1834,7 +1872,13 @@ $("textoForm").onsubmit = async e => {
 });
 
 /* ---------- perfis ---------- */
-let objSel, restrSel, alergSel = [];
+let objSel, restrSel, alergSel = [], outrasSel = [];
+function adicionarOutraAlergia(){
+  const t = $("p-outraAlerg").value.trim().toLowerCase().replace(/\s+/g, " ");
+  if (t.length < 3){ $("p-outraAlerg").focus(); return; }
+  if (!outrasSel.includes(t)) outrasSel = [...outrasSel, t];
+  $("p-outraAlerg").value = ""; renderPerfilChips(); $("p-outraAlerg").focus();
+}
 function renderPerfisUI(){
   $("perfilRapido").innerHTML = perfis.map(p => `<option value="${p.id}" ${p.id===ativoId?"selected":""}>${esc(p.nome)}</option>`).join("");
   $("perfisChips").innerHTML = "";
@@ -1859,6 +1903,13 @@ function renderPerfilChips(){
     b.onclick = () => { alergSel = alergSel.includes(k) ? alergSel.filter(x=>x!==k) : [...alergSel,k]; renderPerfilChips(); };
     $("p-alerg").append(b);
   });
+  $("p-outras").innerHTML = "";
+  outrasSel.forEach(t => {
+    const b = document.createElement("button"); b.type = "button"; b.className = "chip"; b.setAttribute("aria-pressed", "true");
+    b.textContent = t + "  ×"; b.setAttribute("aria-label", `Remover alergia a ${t}`);
+    b.onclick = () => { outrasSel = outrasSel.filter(x => x !== t); renderPerfilChips(); };
+    $("p-outras").append(b);
+  });
   Object.entries(OBJETIVOS).forEach(([k,o]) => {
     const b = document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=o.label;
     b.setAttribute("aria-pressed", objSel===k); b.onclick = () => { objSel=k; renderPerfilChips(); previewMetas(); };
@@ -1873,7 +1924,7 @@ function renderPerfilChips(){
 }
 function lerForm(){
   return {sexo:$("p-sexo").value, idade:num($("p-idade").value)||30, peso:num($("p-peso").value)||70,
-    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel};
+    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel};
 }
 function renderMetas(p){
   const m = metas(p);
@@ -1887,13 +1938,15 @@ function preencherPerfil(){
   $("perfilTitulo").textContent = `Perfil de ${p.nome}`;
   $("p-nome").value = p.nome; $("p-sexo").value = p.sexo; $("p-idade").value = p.idade; $("p-peso").value = p.peso;
   $("p-altura").value = p.altura; $("p-ativ").value = String(p.ativ);
-  objSel = p.obj; restrSel = [...(p.restr||[])]; alergSel = [...(p.alergias||[])];
+  objSel = p.obj; restrSel = [...(p.restr||[])]; alergSel = [...(p.alergias||[])]; outrasSel = [...(p.alergiasOutras||[])];
   $("profileNote").textContent = p.exemplo ? "Este é um perfil de exemplo. Troque pelos seus dados e salve." : "As notas usam estes dados. Atualize quando o peso ou o objetivo mudar.";
   $("perfilExcluir").hidden = perfis.length < 2;
   $("excluirConfirma").hidden = true;
   renderPerfilChips(); renderMetas(p);
 }
 ["p-sexo","p-idade","p-peso","p-altura","p-ativ"].forEach(id => $(id).addEventListener("input", previewMetas));
+$("p-outraAdd").onclick = adicionarOutraAlergia;
+$("p-outraAlerg").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); adicionarOutraAlergia(); } });
 $("profileForm").addEventListener("submit", e => {
   e.preventDefault();
   const i = perfis.findIndex(x => x.id === editandoId);
@@ -2005,7 +2058,8 @@ function gerarRelatorio(p, nDias){
   L.push(`Período: ${dataCurta(ini)} a ${dataCurta(hojeISO(0))} (${nDias} dias)`);
   L.push(`Objetivo: ${OBJETIVOS[p.obj].label} · ${p.idade} anos · ${fmt(p.peso,1)} kg · ${p.altura} cm`);
   if ((p.restr||[]).length) L.push(`Restrições: ${p.restr.map(r => RESTR[r]?.label).filter(Boolean).join(", ")}`);
-  if ((p.alergias||[]).length) L.push(`Alergias: ${p.alergias.map(a => ALERGIAS[a]?.label).filter(Boolean).join(", ")}`);
+  const todasAlerg = [...(p.alergias||[]).map(a => ALERGIAS[a]?.label).filter(Boolean), ...(p.alergiasOutras||[])];
+  if (todasAlerg.length) L.push(`Alergias: ${todasAlerg.join(", ")}`);
   L.push(`Meta diária: ${fmt(m.kcal,0)} kcal · ${m.prot} g proteína · ${m.carb} g carboidrato · ${m.gord} g gordura · ${m.fibra} g fibra`);
   L.push("");
   L.push(`Dias com registro: ${serie.length} de ${nDias}`);

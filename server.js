@@ -27,7 +27,7 @@ const MAX_BYTES_IMAGEM = 3_500_000; // por imagem, já em base64
 
 const PROMPT = `Você recebe foto(s) do rótulo de um alimento vendido no Brasil (tabela nutricional e, talvez, lista de ingredientes e frente da embalagem).
 Extraia os dados e responda SOMENTE com um objeto JSON neste formato, sem nenhum texto antes ou depois:
-{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["leite"],"pode_conter":["amendoim"],"aditivos":["e330"],
+{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["leite"],"pode_conter":["amendoim"],"aditivos":["e330"],"ingredientes":"texto da lista de ingredientes",
  "por100":{"kcal":0,"prot":0,"carb":0,"acucar":0,"acucarAdic":0,"gord":0,"gordSat":0,"gordTrans":0,"fibra":0,"sodio":0}}
 Regras:
 - "por100" é por 100 g (sólido) ou 100 ml (líquido). Se o rótulo só mostra por porção, converta para 100 usando o tamanho da porção.
@@ -38,6 +38,7 @@ Regras:
 - "pode_conter": códigos do texto "PODE CONTER..." ou "contém traços de..." do rótulo, com os mesmos códigos. Lista vazia se o rótulo não fala nisso; null se a foto não mostra essa parte do rótulo.
 - "nova": grau de processamento NOVA de 1 a 4 (4 = ultraprocessado: aromatizantes, corantes, emulsificantes, xarope de glicose, gordura hidrogenada etc.); null se não houver lista de ingredientes.
 - "aditivos": códigos INS dos aditivos da lista de ingredientes, no formato "e" + número (ex.: "INS 330" vira "e330", "INS 150d" vira "e150d"). Se o aditivo aparece só pelo nome, use o código dele. Lista vazia se a lista de ingredientes não tem aditivos; null se a foto não mostra a lista de ingredientes.
+- "ingredientes": copie a lista de ingredientes e o quadro de alérgicos como aparecem no rótulo (incluindo "PODE CONTER..."); null se a foto não mostra.
 - Se a imagem não for um rótulo legível, responda {"legivel":false}.`;
 
 function extrairJSON(texto) {
