@@ -27,14 +27,15 @@ const MAX_BYTES_IMAGEM = 3_500_000; // por imagem, já em base64
 
 const PROMPT = `Você recebe foto(s) do rótulo de um alimento vendido no Brasil (tabela nutricional e, talvez, lista de ingredientes e frente da embalagem).
 Extraia os dados e responda SOMENTE com um objeto JSON neste formato, sem nenhum texto antes ou depois:
-{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["lactose"],"aditivos":["e330"],
+{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["leite"],"pode_conter":["amendoim"],"aditivos":["e330"],
  "por100":{"kcal":0,"prot":0,"carb":0,"acucar":0,"acucarAdic":0,"gord":0,"gordSat":0,"gordTrans":0,"fibra":0,"sodio":0}}
 Regras:
 - "por100" é por 100 g (sólido) ou 100 ml (líquido). Se o rótulo só mostra por porção, converta para 100 usando o tamanho da porção.
 - "sodio" em miligramas. "porcao" em g ou ml (só o número). Use null para o que não aparece.
 - "liquido": true se a tabela é por 100 ml.
 - "categoria": tipo do produto em português, curto e genérico, ex.: "Biscoitos recheados", "Iogurtes", "Refrigerantes".
-- "tags": inclua "lactose" se tem leite/derivados, "gluten" se contém glúten, "amendoim", e "origem_animal" se tem carne, leite, ovo, mel, gelatina ou peixe. Lista vazia se não der para saber.
+- "tags": o que o produto CONTÉM, usando só estes códigos: "leite", "lactose", "gluten", "ovo", "soja", "amendoim", "castanhas", "peixe", "crustaceos", "gergelim", "sulfitos", "origem_animal". Use o quadro "ALÉRGICOS: CONTÉM..." do rótulo e a lista de ingredientes. "origem_animal" se tem carne, leite, ovo, mel, gelatina ou peixe. Produto "zero lactose" com leite: "leite" sem "lactose".
+- "pode_conter": códigos do texto "PODE CONTER..." ou "contém traços de..." do rótulo, com os mesmos códigos. Lista vazia se o rótulo não fala nisso; null se a foto não mostra essa parte do rótulo.
 - "nova": grau de processamento NOVA de 1 a 4 (4 = ultraprocessado: aromatizantes, corantes, emulsificantes, xarope de glicose, gordura hidrogenada etc.); null se não houver lista de ingredientes.
 - "aditivos": códigos INS dos aditivos da lista de ingredientes, no formato "e" + número (ex.: "INS 330" vira "e330", "INS 150d" vira "e150d"). Se o aditivo aparece só pelo nome, use o código dele. Lista vazia se a lista de ingredientes não tem aditivos; null se a foto não mostra a lista de ingredientes.
 - Se a imagem não for um rótulo legível, responda {"legivel":false}.`;
@@ -115,13 +116,14 @@ async function lerRotulo(req, res) {
 const PROMPT_ALIMENTOS = `Você é um assistente de nutrição brasileiro. O usuário descreveu alimentos que comeu ou vai preparar.
 Para CADA item da lista abaixo, estime a quantidade e os valores nutricionais. Use a Tabela Brasileira de Composição de Alimentos (TACO) quando o alimento existir nela; senão, use valores médios de produtos vendidos no Brasil.
 Responda SOMENTE com um objeto JSON neste formato, sem nenhum texto antes ou depois:
-{"itens":[{"texto":"o texto original do item","nome":"nome curto do alimento","gramas":120,"liquido":false,"nova":1,"tags":["lactose"],
+{"itens":[{"texto":"o texto original do item","nome":"nome curto do alimento","gramas":120,"liquido":false,"nova":1,"tags":["leite"],"pode_conter":[],
  "por100":{"kcal":0,"prot":0,"carb":0,"acucarAdic":0,"gord":0,"gordSat":0,"fibra":0,"sodio":0}}]}
 Regras:
 - "gramas": quantidade total do item em g (ou ml, se líquido). Se o usuário não disse a quantidade, use uma porção caseira comum.
 - "por100": valores por 100 g (ou 100 ml). "sodio" em mg. "acucarAdic" é açúcar adicionado (0 em frutas e alimentos in natura).
 - "nova": grau de processamento NOVA de 1 a 4.
-- "tags": "lactose", "gluten", "amendoim", "origem_animal" quando se aplicar.
+- "tags": o que o alimento contém, só com estes códigos: "leite", "lactose", "gluten", "ovo", "soja", "amendoim", "castanhas", "peixe", "crustaceos", "gergelim", "sulfitos", "origem_animal".
+- "pode_conter": códigos que costumam aparecer como traços nesse tipo de alimento (lista vazia se nenhum).
 - Se um item não for comida, devolva "nome": null para ele.
 Itens:
 `;

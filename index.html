@@ -120,6 +120,7 @@ textarea{resize:vertical;min-height:64px;line-height:1.4}
 .nova{display:inline-flex;align-items:center;gap:6px;border:1px solid var(--line);border-radius:6px;padding:4px 8px;font-size:.8rem;font-weight:600}
 .nova b{font-family:var(--f-display);font-size:.95rem;width:20px;height:20px;display:grid;place-items:center;border-radius:4px;color:#fff}
 .warn{display:flex;gap:10px;align-items:flex-start;background:var(--bad-soft);border-radius:10px;padding:10px 12px;font-size:.9rem;font-weight:500}
+.warn.perigo{background:var(--bad);color:#fff;font-weight:800;letter-spacing:.01em}
 .procon{display:grid;grid-template-columns:1fr 1fr;gap:12px}
 .procon ul{list-style:none;margin:8px 0 0;padding:0;display:flex;flex-direction:column;gap:8px}
 .procon li{display:grid;grid-template-columns:18px 1fr;gap:6px;font-size:.88rem;line-height:1.35}
@@ -307,7 +308,7 @@ details summary{cursor:pointer;font-weight:600}
       <div class="grid3" id="e-nut"></div>
       <label class="field"><span>Aditivos (números INS, separados por vírgula)</span><input type="text" id="e-aditivos" placeholder="Ex.: 330, 471, 150d"></label>
       <div>
-        <h3 style="margin-bottom:8px">Contém</h3>
+        <h3 style="margin-bottom:8px">Contém (veja o quadro "ALÉRGICOS" do rótulo)</h3>
         <div class="chips" id="e-aler"></div>
       </div>
       <div class="row">
@@ -432,6 +433,7 @@ details summary{cursor:pointer;font-weight:600}
         </select></label>
       <div><h3 style="margin-bottom:8px">Objetivo</h3><div class="chips" id="p-obj"></div></div>
       <div><h3 style="margin-bottom:8px">Restrições alimentares</h3><div class="chips" id="p-restr"></div></div>
+      <div><h3 style="margin-bottom:4px">Alergias</h3><p class="small muted" style="margin-bottom:8px">Produto que contém o alérgeno fica com nota 0; “pode conter traços” fica com nota máxima 3.</p><div class="chips" id="p-alerg"></div></div>
       <div class="row">
         <button class="btn primary" type="submit">Salvar perfil</button>
         <button class="btn danger ghost" type="button" id="perfilExcluir">Excluir perfil</button>
@@ -479,7 +481,7 @@ details summary{cursor:pointer;font-weight:600}
     </div>
 </section>
 
-  <p class="foot">Orientação geral, baseada no rótulo e em regras simples. Não substitui a avaliação de um nutricionista ou médico, principalmente em caso de doença, gravidez ou alergia grave. A classificação de aditivos é simplificada e se baseia em avaliações públicas da OMS/IARC e da EFSA.</p>
+  <p class="foot">Orientação geral, baseada no rótulo e em regras simples. Não substitui a avaliação de um nutricionista ou médico, principalmente em caso de doença ou gravidez. Em alergia, sempre leia o quadro “ALÉRGICOS” da embalagem: a base de dados e a leitura por IA podem falhar. A classificação de aditivos é simplificada e se baseia em avaliações públicas da OMS/IARC e da EFSA.</p>
 </div>
 
 <script src="https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"></script>
@@ -507,9 +509,23 @@ const RESTR = {
   lactose:{label:"Sem lactose", aviso:"Contém leite ou derivados", tag:"lactose"},
   gluten: {label:"Sem glúten",  aviso:"Contém glúten", tag:"gluten"},
   vegano: {label:"Vegano",      aviso:"Contém ingrediente de origem animal", tag:"origem_animal"},
-  amendoim:{label:"Sem amendoim", aviso:"Contém amendoim", tag:"amendoim"}
 };
-const ALERG = [["lactose","Leite/lactose"],["gluten","Glúten"],["origem_animal","Origem animal"],["amendoim","Amendoim"],["ultra","Ultraprocessado"]];
+/* Alergias: principais alérgenos de declaração obrigatória (Anvisa, RDC 727/2022) + gergelim e sulfitos */
+const ALERGIAS = {
+  leite:{label:"Leite", tags:["leite","lactose"]},
+  ovo:{label:"Ovo", tags:["ovo"]},
+  gluten:{label:"Trigo / glúten", tags:["gluten"]},
+  soja:{label:"Soja", tags:["soja"]},
+  amendoim:{label:"Amendoim", tags:["amendoim"]},
+  castanhas:{label:"Castanhas e nozes", tags:["castanhas"]},
+  peixe:{label:"Peixe", tags:["peixe"]},
+  crustaceos:{label:"Crustáceos e frutos do mar", tags:["crustaceos"]},
+  gergelim:{label:"Gergelim", tags:["gergelim"]},
+  sulfitos:{label:"Sulfitos", tags:["sulfitos"]}
+};
+const TAGS_VALIDAS = ["leite","lactose","gluten","ovo","soja","amendoim","castanhas","peixe","crustaceos","gergelim","sulfitos","origem_animal"];
+const ADIT_SULFITO = ["e220","e221","e222","e223","e224","e225","e226","e227","e228"];
+const ALERG = [["leite","Leite"],["gluten","Glúten"],["ovo","Ovo"],["soja","Soja"],["amendoim","Amendoim"],["castanhas","Castanhas"],["peixe","Peixe"],["crustaceos","Crustáceos"],["gergelim","Gergelim"],["origem_animal","Origem animal"],["ultra","Ultraprocessado"]];
 const NUTS = [
   ["kcal","Valor energético","kcal"],["prot","Proteínas","g"],["carb","Carboidratos","g"],
   ["acucar","Açúcares totais","g"],["acucarAdic","Açúcares adicionados","g"],["gord","Gorduras totais","g"],
@@ -583,17 +599,17 @@ function infoAditivo(c){
 
 /* ---------- exemplos ---------- */
 const EXEMPLOS = [
-  {nome:"Iogurte proteico natural", liquido:false, porcao:170, nova:1, ns:"a", categoria:"Iogurtes", tags:["lactose","origem_animal"], aditivos:[],
+  {nome:"Iogurte proteico natural", liquido:false, porcao:170, nova:1, ns:"a", categoria:"Iogurtes", tags:["leite","lactose","origem_animal"], aditivos:[], alergInfo:true,
    n:{kcal:70,prot:10,carb:5,acucar:4,acucarAdic:0,gord:1,gordSat:0.6,gordTrans:0,fibra:0,sodio:50}},
-  {nome:"Biscoito recheado de chocolate", liquido:false, porcao:30, nova:4, ns:"e", categoria:"Biscoitos", tags:["gluten","lactose","origem_animal"], aditivos:["e322","e471","e500","e503"],
+  {nome:"Biscoito recheado de chocolate", liquido:false, porcao:30, nova:4, ns:"e", categoria:"Biscoitos", tags:["gluten","leite","lactose","soja","origem_animal"], tracos:["amendoim","castanhas","ovo"], aditivos:["e322","e471","e500","e503"], alergInfo:true,
    n:{kcal:480,prot:5,carb:68,acucar:35,acucarAdic:33,gord:20,gordSat:9,gordTrans:0,fibra:2,sodio:250}},
-  {nome:"Biscoito de arroz integral", liquido:false, porcao:20, nova:3, ns:"b", categoria:"Biscoitos", tags:[], aditivos:[],
+  {nome:"Biscoito de arroz integral", liquido:false, porcao:20, nova:3, ns:"b", categoria:"Biscoitos", tags:[], tracos:["gluten","soja"], aditivos:[], alergInfo:true,
    n:{kcal:380,prot:8,carb:80,acucar:0.5,acucarAdic:0,gord:3,gordSat:0.6,gordTrans:0,fibra:4,sodio:200}},
-  {nome:"Refrigerante de cola", liquido:true, porcao:350, nova:4, ns:"e", categoria:"Refrigerantes", tags:[], aditivos:["e150d","e338","e290"],
+  {nome:"Refrigerante de cola", liquido:true, porcao:350, nova:4, ns:"e", categoria:"Refrigerantes", tags:[], aditivos:["e150d","e338","e290"], alergInfo:true,
    n:{kcal:42,prot:0,carb:10.6,acucar:10.6,acucarAdic:10.6,gord:0,gordSat:0,gordTrans:0,fibra:0,sodio:10}},
-  {nome:"Aveia em flocos", liquido:false, porcao:30, nova:1, ns:"a", categoria:"Cereais", tags:["gluten"], aditivos:[],
+  {nome:"Aveia em flocos", liquido:false, porcao:30, nova:1, ns:"a", categoria:"Cereais", tags:["gluten"], aditivos:[], alergInfo:true,
    n:{kcal:380,prot:14,carb:58,acucar:1,acucarAdic:0,gord:7.5,gordSat:1.4,gordTrans:0,fibra:10,sodio:5}},
-  {nome:"Peito de peru fatiado", liquido:false, porcao:40, nova:4, ns:"d", categoria:"Frios", tags:["origem_animal"], aditivos:["e250","e451","e316","e120"],
+  {nome:"Peito de peru fatiado", liquido:false, porcao:40, nova:4, ns:"d", categoria:"Frios", tags:["origem_animal","soja"], tracos:["leite"], aditivos:["e250","e451","e316","e120"], alergInfo:true,
    n:{kcal:110,prot:17,carb:3,acucar:1,acucarAdic:1,gord:3,gordSat:1,gordTrans:0,fibra:0,sodio:1000}}
 ].map(e => ({...e, exemplo:true}));
 const chave = p => p.code ? "c:" + p.code : "n:" + (p.nome || "").toLowerCase();
@@ -704,6 +720,22 @@ const ALIMENTOS = [
 ].map(([nome, alias, n, u, o]) => ({nome, alias, u, l:!!o.l, un:o.un||"unidade", cs:o.cs, fa:o.fa, xi:o.xi, sc:o.sc, co:o.co, es:o.es,
   nova:o.nova ?? 1, tags:o.tags||[], fonte:o.fonte||"TACO",
   n:{kcal:n[0], prot:n[1], carb:n[2], acucarAdic:n[3], gord:n[4], gordSat:n[5], gordTrans:0, fibra:n[6], sodio:n[7]}}));
+/* alérgenos dos alimentos da tabela (contém / pode conter) */
+const ALERG_TABELA = {
+  leite:["Leite integral","Leite desnatado","Leite sem lactose","Iogurte natural","Queijo muçarela","Queijo minas frescal","Requeijão","Manteiga","Whey protein","Pão de queijo","Chocolate ao leite","Strogonoff de frango","Strogonoff de carne","Lasanha à bolonhesa","Pizza de muçarela","Hambúrguer (sanduíche)","Misto quente","Purê de batata","Bolo simples","Sorvete","Brigadeiro","Omelete"],
+  ovo:["Ovo cozido","Ovo frito","Omelete","Pão de queijo","Lasanha à bolonhesa","Frango frito ou à milanesa","Bolo simples","Hambúrguer (sanduíche)"],
+  soja:["Chocolate ao leite"], peixe:["Peixe grelhado","Atum em conserva","Sardinha em conserva"], castanhas:["Castanha-do-pará"]
+};
+const TRACOS_TABELA = {
+  "Granola":["castanhas","amendoim","leite","soja"], "Chocolate ao leite":["amendoim","castanhas"], "Whey protein":["soja","ovo"],
+  "Pasta de amendoim":["castanhas"], "Sorvete":["amendoim","castanhas","soja"], "Brigadeiro":["soja"], "Pão francês":["soja","leite"],
+  "Pão de forma integral":["soja","leite","gergelim"], "Coxinha de frango":["leite","ovo"], "Pastel de carne":["leite","ovo","soja"]
+};
+for (const a of ALIMENTOS){
+  for (const [tag, nomes] of Object.entries(ALERG_TABELA)) if (nomes.includes(a.nome) && !a.tags.includes(tag)) a.tags = [...a.tags, tag];
+  a.tracos = TRACOS_TABELA[a.nome] || [];
+  a.alergInfo = true;
+}
 
 const semAcento = s => String(s).toLowerCase().normalize("NFD").replace(/[̀-ͯ]/g, "");
 const NUM_PALAVRA = {um:1, uma:1, dois:2, duas:2, tres:3, quatro:4, cinco:5, seis:6, sete:7, oito:8, nove:9, dez:10, meio:0.5, meia:0.5};
@@ -790,12 +822,14 @@ function montarRefeicao(nome, itens){
     n[k] = tem ? soma / total * 100 : null;
   }
   const tags = [...new Set(itens.flatMap(i => i.tags || []))];
+  const tracos = [...new Set(itens.flatMap(i => i.tracos || []))].filter(t => !tags.includes(t));
+  const alergInfo = itens.every(i => i.alergInfo);
   // processamento da refeição: ultraprocessada só se mais da metade das calorias vier de itens ultraprocessados
   const kcalDe = i => (num(i.n.kcal) || 0) * i.g / 100;
   const kcalTot = itens.reduce((s, i) => s + kcalDe(i), 0) || 1;
   const parte4 = itens.filter(i => (i.nova || 1) === 4).reduce((s, i) => s + kcalDe(i), 0) / kcalTot;
   const nova = parte4 >= 0.5 ? 4 : parte4 > 0 ? 3 : Math.max(...itens.map(i => i.nova || 1));
-  return {nome, refeicao:true, itens, liquido:itens.every(i => i.l), porcao:Math.round(total), n, tags, nova, ultra: nova === 4,
+  return {nome, refeicao:true, itens, liquido:itens.every(i => i.l), porcao:Math.round(total), n, tags, tracos, alergInfo, nova, ultra: nova === 4,
     aditivos: itens.every(i => (i.nova || 1) <= 2) ? [] : null};
 }
 
@@ -807,6 +841,7 @@ if (!Array.isArray(perfis) || !perfis.length){
   const antigo = store.get("rc.perfil", null);
   perfis = [antigo ? {...antigo, id:"p1", nome: antigo.nome || "Você"} : PERFIL_EXEMPLO];
 }
+perfis = perfis.map(p => (p.restr || []).includes("amendoim") ? {...p, restr:p.restr.filter(r => r !== "amendoim"), alergias:[...new Set([...(p.alergias||[]), "amendoim"])]} : p);
 let ativoId = store.get("rc2.ativo", perfis[0].id);
 if (!perfis.some(p => p.id === ativoId)) ativoId = perfis[0].id;
 const perfil = () => perfis.find(p => p.id === ativoId) || perfis[0];
@@ -915,27 +950,51 @@ function avaliar(prod, p){
   // restrições
   const tags = new Set(prod.tags || []);
   if ((prod.aditivos||[]).some(a => ADIT_ANIMAL.includes(a))) tags.add("origem_animal");
+  if ((prod.aditivos||[]).some(a => ADIT_SULFITO.includes(a))) tags.add("sulfitos");
   let conflito = false;
   for (const r of (p.restr||[])){
     const R = RESTR[r];
     if (R && tags.has(R.tag)){ conflito = true; avisos.unshift(R.aviso + " — não combina com a restrição deste perfil"); }
   }
+  // alergias: "contém" zera a nota; "pode conter" limita a 3; sem informação, pede para conferir o rótulo
+  const perigos = [];
+  let alergia = false, traco = false;
+  const tracos = new Set(prod.tracos || []);
+  const quemTem = tagsAl => (prod.itens || []).filter(i => (i.tags || []).some(t => tagsAl.includes(t))).map(i => i.nome);
+  const quemPode = tagsAl => (prod.itens || []).filter(i => (i.tracos || []).some(t => tagsAl.includes(t))).map(i => i.nome);
+  for (const a of (p.alergias || [])){
+    const A = ALERGIAS[a]; if (!A) continue;
+    if (A.tags.some(t => tags.has(t))){
+      alergia = true; const q = quemTem(A.tags);
+      perigos.push(`ALERGIA: contém ${A.label.toLowerCase()}${q.length ? " (" + q.join(", ") + ")" : ""}`);
+    } else if (A.tags.some(t => tracos.has(t))){
+      traco = true; const q = quemPode(A.tags);
+      avisos.unshift(`Pode conter traços de ${A.label.toLowerCase()}${q.length ? " (" + q.join(", ") + ")" : ""}. Para alergia, evite.`);
+    }
+  }
+  const semInfoAlergia = (p.alergias || []).length > 0 && !alergia && !prod.alergInfo;
+  if (semInfoAlergia) avisos.unshift("Sem informação de alérgicos para este produto. Confira o quadro “ALÉRGICOS” do rótulo antes de consumir.");
   s = Math.max(0, Math.min(10, s));
   if (conflito) s = Math.min(s, 2);
+  if (traco) s = Math.min(s, 3);
+  if (alergia) s = 0;
+  conflito = conflito || alergia || traco;
   s = Math.round(s*2)/2;
 
   pos.sort((a,b)=>b.w-a.w); neg.sort((a,b)=>b.w-a.w);
   const top3p = pos.slice(0,3).map(x=>x.t), top3n = neg.slice(0,3).map(x=>x.t);
   const curto = t => t.split(":")[0].replace(/\s*\(.*$/,"").toLowerCase();
   let titulo;
-  if (conflito) titulo = "Não combina com as restrições";
+  if (alergia) titulo = "Perigo para quem tem esta alergia";
+  else if (traco) titulo = "Pode conter alérgeno deste perfil";
+  else if (conflito) titulo = "Não combina com as restrições";
   else if (s >= 8) titulo = `Ótimo para ${o.para}`;
   else if (s >= 6) titulo = `Boa opção para ${o.para}`;
   else if (s >= 4) titulo = "Dá para consumir com moderação";
   else titulo = "Melhor evitar no dia a dia";
   const motivos = (s >= 6 ? top3p.slice(0,2) : top3n.slice(0,2)).map(curto);
-  const frase = motivos.length ? `${titulo}: ${motivos.join(", ")}.` : `${titulo}.`;
-  return {nota:s, frase, pros:top3p, contras:top3n, lupas, avisos, metas:m, fator, un, conflito, adit, nova};
+  const frase = (alergia || traco) ? `${titulo}.` : motivos.length ? `${titulo}: ${motivos.join(", ")}.` : `${titulo}.`;
+  return {nota:s, frase, pros:top3p, contras:top3n, lupas, avisos, perigos, metas:m, fator, un, conflito, alergia, adit, nova};
 }
 const faixa = nota => nota >= 8 ? ["Excelente","var(--good)"] : nota >= 6 ? ["Bom","var(--ns-b)"] : nota >= 4 ? ["Regular","var(--mid)"] : ["Ruim","var(--bad)"];
 const corNota = nota => nota >= 7 ? "var(--good)" : nota >= 4 ? "var(--mid)" : "var(--bad)";
@@ -985,6 +1044,7 @@ function renderResultado(){
         <p class="small muted">Para ${esc(p.nome)} · ${OBJETIVOS[p.obj].label.toLowerCase()}${p.exemplo?" (perfil de exemplo)":""}</p>
       </div>
     </div>
+    ${r.perigos.map(a=>`<div class="warn perigo" role="alert"><span aria-hidden="true">⛔</span><span>${esc(a)}</span></div>`).join("")}
     ${(r.lupas.length || atual.ns || r.nova) ? `<div class="badges">${r.lupas.map(t=>`<span class="lupa">${lupaSVG}${esc(t)}</span>`).join("")}${nutriScoreHTML(atual.ns)}${novaHTML(r.nova)}</div>` : ""}
     ${r.avisos.map(a=>`<div class="warn"><span aria-hidden="true">⚠︎</span><span>${esc(a)}</span></div>`).join("")}
     ${atual.itens ? `<div><h3 style="margin-bottom:8px">Ingredientes · total ${fmt(atual.porcao,0)} ${atual.liquido?"ml":"g"} · ${fmt(num(atual.n.kcal)*atual.porcao/100,0)} kcal · ${fmt(num(atual.n.prot)*atual.porcao/100,0)} g de proteína</h3>
@@ -1120,7 +1180,7 @@ $("histNao").onclick = () => { $("histConfirma").hidden = true; };
 $("histSim").onclick = () => { $("histConfirma").hidden = true; excluirDoHistorico(historico.map(h => h.k)); };
 
 /* ---------- alternativas ---------- */
-const CAMPOS_OFF = "code,product_name,brands,nutriments,serving_quantity,nova_group,allergens_tags,traces_tags,categories_tags,categories,nutrition_data_per,ingredients_analysis_tags,additives_tags,nutriscore_grade";
+const CAMPOS_OFF = "code,ingredients_text,product_name,brands,nutriments,serving_quantity,nova_group,allergens_tags,traces_tags,categories_tags,categories,nutrition_data_per,ingredients_analysis_tags,additives_tags,nutriscore_grade";
 async function buscarAlternativas(prod){
   const card = $("altCard"), body = $("altBody");
   card.hidden = false; $("cmpCard").hidden = true;
@@ -1482,7 +1542,7 @@ function abrirEditor(prod, titulo){
   $("e-categoria").value = p.categoria || "";
   $("e-aditivos").value = (p.aditivos || []).map(a => a.slice(1).toUpperCase()).join(", ");
   NUTS.forEach(([k]) => $("e-"+k).value = p.n?.[k] ?? "");
-  alerSel = [...(p.tags||[]), ...((p.nova === 4 || p.ultra) ? ["ultra"] : [])];
+  alerSel = [...new Set([...(p.tags||[]).map(t => t === "lactose" ? "leite" : t), ...((p.nova === 4 || p.ultra) ? ["ultra"] : [])])];
   renderAlerChips();
   $("editor").hidden = false;
   $("editor").scrollIntoView({block:"start"});
@@ -1498,7 +1558,7 @@ $("editor").addEventListener("submit", e => {
   const ultra = alerSel.includes("ultra");
   const prod = {...base, nome:$("e-nome").value.trim() || "Produto sem nome", liquido:$("e-liquido").value==="1", porcao:num($("e-porcao").value),
     categoria:$("e-categoria").value.trim() || null, nova: ultra ? 4 : (base.nova === 4 ? null : base.nova ?? null), ultra,
-    tags:alerSel.filter(x=>x!=="ultra"), aditivos: aditTxt ? aditTxt.split(/[,;]+/).map(normAditivo).filter(Boolean) : (base.aditivos ?? null), n};
+    tags:[...new Set(alerSel.filter(x=>x!=="ultra").flatMap(x => x === "leite" ? ["leite","lactose"] : [x]))], alergInfo:true, aditivos: aditTxt ? aditTxt.split(/[,;]+/).map(normAditivo).filter(Boolean) : (base.aditivos ?? null), n};
   delete prod.exemplo;
   if (editandoBase && chave(editandoBase) !== chave(prod) && !editandoBase.exemplo) delete catalogo[chave(editandoBase)];
   $("editor").hidden = true; setStatus("");
@@ -1516,13 +1576,14 @@ function setStatus(msg, tipo){
 function deOFF(code, pr){
   const nu = pr.nutriments || {};
   const g = k => num(nu[k+"_100g"]);
-  const al = (pr.allergens_tags||[]).join(" ") + " " + (pr.traces_tags||[]).join(" ");
+  const al = (pr.allergens_tags||[]).join(" ");
+  const tr = (pr.traces_tags||[]).join(" ");
   const catsT = pr.categories_tags || [];
   const cats = catsT.join(" ");
-  const tags = [];
-  if (/milk|lait|leite/.test(al)) tags.push("lactose");
-  if (/gluten/.test(al)) tags.push("gluten");
-  if (/peanut|amendoim/.test(al)) tags.push("amendoim");
+  const MAPA_OFF = [["leite",/milk|lait|leite/],["lactose",/milk|lait|leite/],["gluten",/gluten|wheat|trigo/],["ovo",/egg|ovo/],["soja",/soy|soja/],["amendoim",/peanut|amendoim/],
+    ["castanhas",/nuts|castanha|nozes/],["peixe",/fish|peixe/],["crustaceos",/crustacean|mollus|crustaceo/],["gergelim",/sesame|gergelim/],["sulfitos",/sulphite|sulfite|sulphur|sulfito/]];
+  const tags = MAPA_OFF.filter(([, re]) => re.test(al)).map(([t]) => t);
+  const tracosOFF = MAPA_OFF.filter(([t, re]) => re.test(tr) && !tags.includes(t) && t !== "lactose").map(([t]) => t);
   if (/milk|egg|fish|crustacean|mollus/.test(al) || /meat|fish|dairies|eggs|seafood/.test(cats) || (pr.ingredients_analysis_tags||[]).includes("en:non-vegan")) tags.push("origem_animal");
   const sodio = g("sodium") != null ? g("sodium")*1000 : (g("salt") != null ? g("salt")*400 : null);
   const catTxt = String(pr.categories || "").split(",").map(s => s.trim()).filter(Boolean);
@@ -1536,7 +1597,7 @@ function deOFF(code, pr){
     ns: /^[a-e]$/.test(ns) ? ns : null,
     categoria: catTxt[catTxt.length-1] || (catTag ? catTag.replace(/^\w\w:/,"").replace(/-/g," ") : null), catTag,
     aditivos: Array.isArray(pr.additives_tags) ? [...new Set(pr.additives_tags.map(normAditivo).filter(Boolean))] : null,
-    tags: [...new Set(tags)],
+    tags: [...new Set(tags)], tracos: tracosOFF, alergInfo: Array.isArray(pr.allergens_tags) && (pr.allergens_tags.length > 0 || Array.isArray(pr.traces_tags) || !!pr.ingredients_text),
     n:{kcal:g("energy-kcal") ?? (g("energy")!=null ? g("energy")/4.184 : null), prot:g("proteins"), carb:g("carbohydrates"), acucar:g("sugars"),
        acucarAdic:g("added-sugars"), gord:g("fat"), gordSat:g("saturated-fat"), gordTrans:g("trans-fat"), fibra:g("fiber"), sodio}
   };
@@ -1607,14 +1668,15 @@ async function codigoDaFoto(file){
 let sample = null;
 const PROMPT = `Você recebe foto(s) do rótulo de um alimento vendido no Brasil (tabela nutricional e, talvez, lista de ingredientes e frente da embalagem).
 Extraia os dados e responda SOMENTE com um objeto JSON neste formato:
-{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["lactose"],"aditivos":["e330"],
+{"legivel":true,"nome":"string ou null","categoria":"string curta","liquido":false,"porcao":30,"nova":4,"tags":["leite"],"pode_conter":["amendoim"],"aditivos":["e330"],
  "por100":{"kcal":0,"prot":0,"carb":0,"acucar":0,"acucarAdic":0,"gord":0,"gordSat":0,"gordTrans":0,"fibra":0,"sodio":0}}
 Regras:
 - "por100" é por 100 g (sólido) ou 100 ml (líquido). Se o rótulo só mostra por porção, converta para 100 usando o tamanho da porção.
 - "sodio" em miligramas. "porcao" em g ou ml (só o número). Use null para o que não aparece.
 - "liquido": true se a tabela é por 100 ml.
 - "categoria": tipo do produto em português, curto e genérico, ex.: "Biscoitos recheados", "Iogurtes", "Refrigerantes".
-- "tags": inclua "lactose" se tem leite/derivados, "gluten" se contém glúten, "amendoim", e "origem_animal" se tem carne, leite, ovo, mel, gelatina ou peixe. Lista vazia se não der para saber.
+- "tags": o que o produto CONTÉM, usando só estes códigos: "leite", "lactose", "gluten", "ovo", "soja", "amendoim", "castanhas", "peixe", "crustaceos", "gergelim", "sulfitos", "origem_animal". Use o quadro "ALÉRGICOS: CONTÉM..." do rótulo e a lista de ingredientes. "origem_animal" se tem carne, leite, ovo, mel, gelatina ou peixe. Produto "zero lactose" com leite: "leite" sem "lactose".
+- "pode_conter": códigos do texto "PODE CONTER..." ou "contém traços de..." do rótulo, com os mesmos códigos. Lista vazia se o rótulo não fala nisso; null se a foto não mostra essa parte do rótulo.
 - "nova": grau de processamento NOVA de 1 a 4 (4 = ultraprocessado: aromatizantes, corantes, emulsificantes, xarope de glicose, gordura hidrogenada etc.); null se não houver lista de ingredientes.
 - "aditivos": códigos INS dos aditivos da lista de ingredientes, no formato "e" + número (ex.: "INS 330" vira "e330", "INS 150d" vira "e150d"). Se o aditivo aparece só pelo nome, use o código dele. Lista vazia se a lista de ingredientes não tem aditivos; null se a foto não mostra a lista de ingredientes.
 - Se a imagem não for um rótulo legível, responda {"legivel":false}.`;
@@ -1672,7 +1734,9 @@ async function processarFotos(files){
     const nova = [1,2,3,4].includes(Number(d.nova)) ? Number(d.nova) : (d.ultraprocessado === true ? 4 : null);
     const nomeDigitado = $("fotoNome").value.trim();
     const prod = {nome: nomeDigitado || d.nome || "Produto fotografado", categoria: d.categoria || null, liquido: !!d.liquido, porcao: num(d.porcao), nova, ultra: nova === 4,
-      tags: Array.isArray(d.tags) ? d.tags.filter(t => ["lactose","gluten","amendoim","origem_animal"].includes(t)) : [],
+      tags: Array.isArray(d.tags) ? d.tags.filter(t => TAGS_VALIDAS.includes(t)) : [],
+      tracos: Array.isArray(d.pode_conter) ? d.pode_conter.filter(t => TAGS_VALIDAS.includes(t)) : [],
+      alergInfo: Array.isArray(d.tags) && Array.isArray(d.pode_conter),
       aditivos: Array.isArray(d.aditivos) ? [...new Set(d.aditivos.map(normAditivo).filter(Boolean))] : null, n};
     if (n.kcal == null){ setStatus("Li o rótulo, mas faltou o valor energético. Confira os números abaixo.","err"); abrirEditor(prod,"Confira os valores lidos"); return; }
     setStatus("Rótulo lido. Confira os números na tabela e corrija se algo saiu diferente da embalagem.","ok");
@@ -1698,13 +1762,14 @@ async function processarFotos(files){
 const PROMPT_ALIMENTOS = `Você é um assistente de nutrição brasileiro. O usuário descreveu alimentos que comeu ou vai preparar.
 Para CADA item da lista abaixo, estime a quantidade e os valores nutricionais. Use a Tabela Brasileira de Composição de Alimentos (TACO) quando o alimento existir nela; senão, use valores médios de produtos vendidos no Brasil.
 Responda SOMENTE com um objeto JSON neste formato:
-{"itens":[{"texto":"o texto original do item","nome":"nome curto do alimento","gramas":120,"liquido":false,"nova":1,"tags":["lactose"],
+{"itens":[{"texto":"o texto original do item","nome":"nome curto do alimento","gramas":120,"liquido":false,"nova":1,"tags":["leite"],"pode_conter":[],
  "por100":{"kcal":0,"prot":0,"carb":0,"acucarAdic":0,"gord":0,"gordSat":0,"fibra":0,"sodio":0}}]}
 Regras:
 - "gramas": quantidade total do item em g (ou ml, se líquido). Se o usuário não disse a quantidade, use uma porção caseira comum.
 - "por100": valores por 100 g (ou 100 ml). "sodio" em mg. "acucarAdic" é açúcar adicionado (0 em frutas e alimentos in natura).
 - "nova": grau de processamento NOVA de 1 a 4.
-- "tags": "lactose", "gluten", "amendoim", "origem_animal" quando se aplicar.
+- "tags": o que o alimento contém, só com estes códigos: "leite", "lactose", "gluten", "ovo", "soja", "amendoim", "castanhas", "peixe", "crustaceos", "gergelim", "sulfitos", "origem_animal".
+- "pode_conter": códigos que costumam aparecer como traços nesse tipo de alimento (lista vazia se nenhum).
 - Se um item não for comida, devolva "nome": null para ele.
 Itens:
 `;
@@ -1724,14 +1789,15 @@ async function estimarIA(textos){
   return (Array.isArray(d?.itens) ? d.itens : []).filter(x => x && x.nome && x.por100 && num(x.gramas) > 0).map(x => ({
     nome: String(x.nome).slice(0, 50), g: num(x.gramas), l: !!x.liquido, estimado: true, fonte: "estimado pela IA",
     nova: [1,2,3,4].includes(Number(x.nova)) ? Number(x.nova) : 3,
-    tags: Array.isArray(x.tags) ? x.tags.filter(t => ["lactose","gluten","amendoim","origem_animal"].includes(t)) : [],
+    tags: Array.isArray(x.tags) ? x.tags.filter(t => TAGS_VALIDAS.includes(t)) : [],
+    tracos: Array.isArray(x.pode_conter) ? x.pode_conter.filter(t => TAGS_VALIDAS.includes(t)) : [], alergInfo: Array.isArray(x.tags),
     n: Object.fromEntries(["kcal","prot","carb","acucarAdic","gord","gordSat","fibra","sodio"].map(k => [k, num(x.por100[k])]))
   }));
 }
 /* Transforma pedaços de texto em ingredientes: tabela primeiro, IA para o resto */
 async function interpretarItens(pedacos){
   const lidos = pedacos.map(lerPedaco);
-  const itens = lidos.filter(p => p.alimento).map(p => ({nome:p.alimento.nome, g:p.gramas, l:p.alimento.l, n:{...p.alimento.n}, tags:p.alimento.tags, nova:p.alimento.nova, fonte:p.alimento.fonte}));
+  const itens = lidos.filter(p => p.alimento).map(p => ({nome:p.alimento.nome, g:p.gramas, l:p.alimento.l, n:{...p.alimento.n}, tags:p.alimento.tags, tracos:p.alimento.tracos, alergInfo:true, nova:p.alimento.nova, fonte:p.alimento.fonte}));
   const faltam = lidos.filter(p => p.desconhecido).map(p => p.desconhecido);
   if (faltam.length){
     setStatus(`Estimando com IA: ${esc(faltam.join(", "))}…`);
@@ -1768,7 +1834,7 @@ $("textoForm").onsubmit = async e => {
 });
 
 /* ---------- perfis ---------- */
-let objSel, restrSel;
+let objSel, restrSel, alergSel = [];
 function renderPerfisUI(){
   $("perfilRapido").innerHTML = perfis.map(p => `<option value="${p.id}" ${p.id===ativoId?"selected":""}>${esc(p.nome)}</option>`).join("");
   $("perfisChips").innerHTML = "";
@@ -1786,7 +1852,13 @@ function renderPerfisUI(){
   $("perfisChips").append(novo);
 }
 function renderPerfilChips(){
-  $("p-obj").innerHTML = ""; $("p-restr").innerHTML = "";
+  $("p-obj").innerHTML = ""; $("p-restr").innerHTML = ""; $("p-alerg").innerHTML = "";
+  Object.entries(ALERGIAS).forEach(([k,a]) => {
+    const b = document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=a.label;
+    b.setAttribute("aria-pressed", alergSel.includes(k));
+    b.onclick = () => { alergSel = alergSel.includes(k) ? alergSel.filter(x=>x!==k) : [...alergSel,k]; renderPerfilChips(); };
+    $("p-alerg").append(b);
+  });
   Object.entries(OBJETIVOS).forEach(([k,o]) => {
     const b = document.createElement("button"); b.type="button"; b.className="chip"; b.textContent=o.label;
     b.setAttribute("aria-pressed", objSel===k); b.onclick = () => { objSel=k; renderPerfilChips(); previewMetas(); };
@@ -1801,7 +1873,7 @@ function renderPerfilChips(){
 }
 function lerForm(){
   return {sexo:$("p-sexo").value, idade:num($("p-idade").value)||30, peso:num($("p-peso").value)||70,
-    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel};
+    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel};
 }
 function renderMetas(p){
   const m = metas(p);
@@ -1815,7 +1887,7 @@ function preencherPerfil(){
   $("perfilTitulo").textContent = `Perfil de ${p.nome}`;
   $("p-nome").value = p.nome; $("p-sexo").value = p.sexo; $("p-idade").value = p.idade; $("p-peso").value = p.peso;
   $("p-altura").value = p.altura; $("p-ativ").value = String(p.ativ);
-  objSel = p.obj; restrSel = [...(p.restr||[])];
+  objSel = p.obj; restrSel = [...(p.restr||[])]; alergSel = [...(p.alergias||[])];
   $("profileNote").textContent = p.exemplo ? "Este é um perfil de exemplo. Troque pelos seus dados e salve." : "As notas usam estes dados. Atualize quando o peso ou o objetivo mudar.";
   $("perfilExcluir").hidden = perfis.length < 2;
   $("excluirConfirma").hidden = true;
@@ -1933,6 +2005,7 @@ function gerarRelatorio(p, nDias){
   L.push(`Período: ${dataCurta(ini)} a ${dataCurta(hojeISO(0))} (${nDias} dias)`);
   L.push(`Objetivo: ${OBJETIVOS[p.obj].label} · ${p.idade} anos · ${fmt(p.peso,1)} kg · ${p.altura} cm`);
   if ((p.restr||[]).length) L.push(`Restrições: ${p.restr.map(r => RESTR[r]?.label).filter(Boolean).join(", ")}`);
+  if ((p.alergias||[]).length) L.push(`Alergias: ${p.alergias.map(a => ALERGIAS[a]?.label).filter(Boolean).join(", ")}`);
   L.push(`Meta diária: ${fmt(m.kcal,0)} kcal · ${m.prot} g proteína · ${m.carb} g carboidrato · ${m.gord} g gordura · ${m.fibra} g fibra`);
   L.push("");
   L.push(`Dias com registro: ${serie.length} de ${nDias}`);
