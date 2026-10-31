@@ -435,7 +435,7 @@ details summary{cursor:pointer;font-weight:600}
         </form>
         <div id="googleArea" hidden style="display:flex;flex-direction:column;gap:6px;align-items:center">
           <span class="small muted">ou</span>
-          <div id="googleBtn"></div>
+          <div id="googleBtn" style="color-scheme:normal;border-radius:999px;overflow:hidden;min-height:44px"></div>
         </div>
         <button class="btn sm ghost" type="button" id="esqueciBtn" style="align-self:flex-start">Esqueci a senha</button>
         <form id="esqueciForm" hidden class="row" autocomplete="off">
@@ -2358,7 +2358,8 @@ function prepararGoogle(clientId){
         else if (r.j.erro === "consentimento"){ trocarModo(true); msgConta("Conta nova: marque a caixa da Política de Privacidade e toque de novo em “Continuar com Google”.", "err"); }
         else msgConta(r.j.mensagem || "Não deu para entrar com Google.", "err");
       }});
-      google.accounts.id.renderButton($("googleBtn"), {theme:"outline", size:"large", text:"continue_with", shape:"pill", locale:"pt-BR", width:280});
+      const escuro = document.documentElement.dataset.theme === "dark" || (document.documentElement.dataset.theme !== "light" && matchMedia("(prefers-color-scheme: dark)").matches);
+      google.accounts.id.renderButton($("googleBtn"), {theme: escuro ? "filled_black" : "outline", size:"large", text:"continue_with", shape:"pill", locale:"pt-BR", width:280});
     }catch(e){ $("googleArea").hidden = true; }
   };
   if (window.google?.accounts?.id) return iniciar();
