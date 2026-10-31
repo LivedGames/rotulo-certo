@@ -1,9 +1,11 @@
-// Rótulo Certo — servidor único (página + leitura de rótulo por foto).
-// No Railway: só configure a variável GROQ_API_KEY. O Railway define PORT sozinho.
+// Rótulo Certo — servidor (página, leitura de rótulo por IA, contas e base de produtos).
+// No Railway: GROQ_API_KEY para a IA; adicione um PostgreSQL para as contas (DATABASE_URL é criada sozinha).
+// Outras variáveis opcionais estão explicadas no topo do banco.js. O Railway define PORT sozinho.
 import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
+import { rotasBanco, prepararBanco, limitar, temBanco } from "./banco.js";
 
 const PASTA = path.dirname(fileURLToPath(import.meta.url));
 const PORTA = Number(process.env.PORT) || 3000;
@@ -234,16 +236,31 @@ http.createServer(async (req, res) => {
   adaptar(res);
   const url = new URL(req.url, "http://x");
 
-  if (url.pathname === "/api/ler-rotulo" || url.pathname === "/api/alimentos") {
-    const rotina = url.pathname === "/api/alimentos" ? estimarAlimentos : lerRotulo;
+  if (url.pathname.startsWith("/api/")) {
     let tamanho = 0; const partes = [];
     req.on("data", c => { tamanho += c.length; if (tamanho > LIMITE) { res.status(413).json({ erro: "image_rejected" }); req.destroy(); } else partes.push(c); });
     req.on("end", async () => {
       if (res.writableEnded) return;
-      try { req.body = JSON.parse(Buffer.concat(partes).toString("utf8") || "{}"); } catch { req.body = {}; }
-      await rotina(req, res);
+      try { req.body = partes.length ? JSON.parse(Buffer.concat(partes).toString("utf8")) : {}; } catch { req.body = {}; }
+      res.setHeader("Cache-Control", "no-store");
+      if (url.pathname === "/api/ler-rotulo" || url.pathname === "/api/alimentos") {
+        // limite por aparelho para proteger a cota da IA
+        const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
+        if (!limitar("ia:" + ip, Number(process.env.LIMITE_IA_HORA) || 40, 3600e3)) return res.status(429).json({ erro: "rate_limited", detalhe: "Limite de leituras por hora deste aparelho." });
+        return url.pathname === "/api/alimentos" ? estimarAlimentos(req, res) : lerRotulo(req, res);
+      }
+      if (await rotasBanco(req, res, url)) return;
+      res.status(404).json({ erro: "rota" });
     });
     return;
+  }
+
+  if (url.pathname === "/privacidade") {
+    try {
+      const html = String(await readFile(path.join(PASTA, "privacidade.html"))).replaceAll("{{CONTATO}}", process.env.CONTATO_EMAIL || "o e-mail de contato informado na página do app");
+      res.setHeader("Content-Type", "text/html; charset=utf-8");
+      return res.end(html);
+    } catch { return res.status(404).end("Não encontrado"); }
   }
 
   // arquivos do app instalável (PWA)
@@ -270,7 +287,7 @@ http.createServer(async (req, res) => {
     return res.end(process.env.ASSETLINKS_JSON || "[]");
   }
 
-  if (url.pathname === "/" || url.pathname === "/index.html") {
+  if (url.pathname === "/" || url.pathname === "/index.html" || url.pathname === "/redefinir") {
     try {
       const html = await readFile(path.join(PASTA, "index.html"));
       res.setHeader("Content-Type", "text/html; charset=utf-8");
@@ -281,7 +298,8 @@ http.createServer(async (req, res) => {
   }
 
   res.status(404).end("Não encontrado");
-}).listen(PORTA, () => {
+}).listen(PORTA, async () => {
   console.log(`Rótulo Certo rodando na porta ${PORTA}`);
+  try { await prepararBanco(); } catch (e) { console.error("Não consegui preparar o banco:", e.message); }
   if (!["GROQ_API_KEY","OPENROUTER_API_KEY","GEMINI_API_KEY","ANTHROPIC_API_KEY"].some(k => process.env[k])) console.log("Atenção: falta GROQ_API_KEY. A leitura por foto não vai funcionar.");
 });

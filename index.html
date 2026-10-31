@@ -232,6 +232,13 @@ details summary{cursor:pointer;font-weight:600}
     </nav>
   </header>
 
+  <form class="card" id="redefinirCard" hidden autocomplete="off">
+    <h2>Criar nova senha</h2>
+    <label class="field"><span>Nova senha (pelo menos 8 caracteres)</span><input type="password" id="novaSenha" autocomplete="new-password" minlength="8" style="font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%"></label>
+    <button class="btn primary" type="submit">Salvar nova senha</button>
+    <p class="status err" id="redefinirMsg" hidden></p>
+  </form>
+
   <div class="card instalar" id="instalarCard" hidden>
     <div class="row" style="justify-content:space-between;flex-wrap:nowrap;align-items:flex-start">
       <div style="min-width:0"><b>Instale o Rótulo Certo</b><p class="small muted" id="instalarTexto">Abre direto da tela inicial, em tela cheia, e funciona sem internet.</p></div>
@@ -409,6 +416,66 @@ details summary{cursor:pointer;font-weight:600}
 
   <!-- PERFIL -->
   <section class="panel" id="view-perfil" hidden>
+    <div class="card" id="contaCard">
+      <div class="row" style="justify-content:space-between"><h2>Conta</h2><span class="small muted" id="syncStatus"></span></div>
+      <p class="small muted" id="contaSemServidor" hidden>Login e sincronização funcionam no app publicado (Railway). Aqui, seus dados ficam só neste aparelho; use o backup abaixo.</p>
+
+      <div id="contaFora" hidden style="display:flex;flex-direction:column;gap:10px">
+        <p class="small muted">Crie uma conta para guardar seus dados com segurança e usar em qualquer celular ou computador.</p>
+        <div class="periodo" role="group" aria-label="Entrar ou criar conta" style="grid-template-columns:1fr 1fr">
+          <button type="button" class="chip" id="modoEntrar" aria-pressed="true">Entrar</button>
+          <button type="button" class="chip" id="modoCriar" aria-pressed="false">Criar conta</button>
+        </div>
+        <form id="contaForm" autocomplete="on" style="display:flex;flex-direction:column;gap:10px">
+          <label class="field" id="campoNome" hidden><span>Nome</span><input type="text" id="cNome" autocomplete="name" maxlength="60"></label>
+          <label class="field"><span>E-mail</span><input type="text" inputmode="email" id="cEmail" autocomplete="email" maxlength="200"></label>
+          <label class="field"><span>Senha</span><input type="password" id="cSenha" autocomplete="current-password" minlength="8" style="font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%"></label>
+          <label class="small" style="display:flex;gap:8px;align-items:flex-start" id="campoConsent"><input type="checkbox" id="cConsent" style="margin-top:3px;accent-color:var(--accent)"><span>Li e aceito a <a href="/privacidade" target="_blank" rel="noopener">Política de Privacidade</a> e autorizo o uso dos meus dados de saúde (peso, alimentação, alergias) para o funcionamento do app.</span></label>
+          <button class="btn primary" type="submit" id="contaEnviar">Entrar</button>
+        </form>
+        <div id="googleArea" hidden style="display:flex;flex-direction:column;gap:6px;align-items:center">
+          <span class="small muted">ou</span>
+          <div id="googleBtn"></div>
+        </div>
+        <button class="btn sm ghost" type="button" id="esqueciBtn" style="align-self:flex-start">Esqueci a senha</button>
+        <form id="esqueciForm" hidden class="row" autocomplete="off">
+          <input type="text" inputmode="email" id="esqueciEmail" placeholder="Seu e-mail" aria-label="E-mail para recuperar a senha" style="flex:1 1 180px">
+          <button class="btn sm" type="submit">Enviar link</button>
+        </form>
+      </div>
+
+      <div id="contaDentro" hidden style="display:flex;flex-direction:column;gap:10px">
+        <p>Conectado como <b id="contaEmail"></b></p>
+        <p class="small muted">Seus perfis, diário, pesos e listas ficam salvos na conta e aparecem em qualquer aparelho em que você entrar.</p>
+        <div class="row">
+          <button class="btn sm" type="button" id="syncAgora">Sincronizar agora</button>
+          <button class="btn sm" type="button" id="sairBtn">Sair</button>
+          <button class="btn sm ghost danger" type="button" id="excluirContaBtn">Excluir minha conta</button>
+        </div>
+        <div class="status" id="sairConfirma" hidden>
+          <p style="margin-bottom:8px">Quer manter os dados neste aparelho depois de sair? Em celular de outra pessoa, apague.</p>
+          <div class="row"><button class="btn sm" type="button" id="sairManter">Sair e manter aqui</button><button class="btn sm danger" type="button" id="sairApagar">Sair e apagar deste aparelho</button><button class="btn sm ghost" type="button" id="sairCancelar">Cancelar</button></div>
+        </div>
+        <div class="status err" id="excluirContaConfirma" hidden>
+          <p style="margin-bottom:8px"><b>Isto apaga para sempre</b> sua conta, perfis, diário, pesos e listas. Os produtos que você cadastrou continuam na base, sem o seu nome.</p>
+          <div class="row"><input type="password" id="excluirSenha" placeholder="Sua senha" aria-label="Senha para confirmar" style="flex:1 1 160px;font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px">
+          <button class="btn sm danger" type="button" id="excluirContaSim">Excluir tudo</button><button class="btn sm ghost" type="button" id="excluirContaNao">Cancelar</button></div>
+        </div>
+      </div>
+      <div class="status" id="contaMsg" hidden></div>
+    </div>
+
+    <div class="card" id="adminCard" hidden>
+      <h2>Painel da base de produtos</h2>
+      <div class="tiles" id="adminResumo"></div>
+      <select id="adminFiltro" aria-label="Filtro do painel">
+        <option value="revisao">Em revisão (escondidos)</option>
+        <option value="denunciados">Com denúncias</option>
+        <option value="recentes">Atualizados recentemente</option>
+        <option value="mais">Mais escaneados</option>
+      </select>
+      <div class="lista" id="adminLista"></div>
+    </div>
     <div class="card">
       <h2>Perfis da casa</h2>
       <p class="small muted">Cada pessoa tem a própria meta, restrições e diário. A mesma comida pode ter notas diferentes para cada uma.</p>
@@ -866,6 +933,7 @@ const salvar = () => {
   store.set("rc2.perfis", perfis); store.set("rc2.ativo", ativoId); store.set("rc2.catalogo", catalogo);
   store.set("rc2.hist", historico); store.set("rc2.fav", favs); store.set("rc2.compras", compras);
   store.set("rc2.diario", diario); store.set("rc2.pesos", pesos); store.set("rc.atual", atual);
+  marcarSujo();
 };
 const produtoDe = k => catalogo[k] || EXEMPLOS.find(e => chave(e) === k) || null;
 
@@ -1066,6 +1134,7 @@ function renderResultado(){
     ${r.perigos.map(a=>`<div class="warn perigo" role="alert"><span aria-hidden="true">⛔</span><span>${esc(a)}</span></div>`).join("")}
     ${(r.lupas.length || atual.ns || r.nova) ? `<div class="badges">${r.lupas.map(t=>`<span class="lupa">${lupaSVG}${esc(t)}</span>`).join("")}${nutriScoreHTML(atual.ns)}${novaHTML(r.nova)}</div>` : ""}
     ${r.avisos.map(a=>`<div class="warn"><span aria-hidden="true">⚠︎</span><span>${esc(a)}</span></div>`).join("")}
+    ${baseHTML(atual)}
     ${atual.itens ? `<div><h3 style="margin-bottom:8px">Ingredientes · total ${fmt(atual.porcao,0)} ${atual.liquido?"ml":"g"} · ${fmt(num(atual.n.kcal)*atual.porcao/100,0)} kcal · ${fmt(num(atual.n.prot)*atual.porcao/100,0)} g de proteína</h3>
       <div class="ingr">${atual.itens.map((it,i) => `<div class="ing"><span class="nm">${esc(it.nome)}${it.estimado?'<span class="est">estimado</span>':""}<small>${fmt(num(it.n.kcal)*it.g/100,0)} kcal · ${fmt(num(it.n.prot)*it.g/100,1)} g prot · ${esc(it.fonte||"")}</small></span><input type="number" min="0" step="any" value="${Math.round(it.g*10)/10}" data-ing="${i}" aria-label="Quantidade de ${esc(it.nome)}"><span class="u">${it.l?"ml":"g"}</span><button class="x" type="button" data-rm="${i}" aria-label="Remover ${esc(it.nome)}">×</button></div>`).join("")}</div>
       <form class="row" id="ingAdd" autocomplete="off" style="margin-top:8px"><input type="text" id="ingTexto" placeholder="Adicionar ingrediente (ex.: 1 colher de mel)" style="flex:1 1 180px" aria-label="Adicionar ingrediente"><button class="btn sm" type="submit">Adicionar</button></form></div>` : ""}
@@ -1089,6 +1158,8 @@ function renderResultado(){
     </div></div>
     ${atual.refeicao ? `<p class="small muted">Valores de alimentos da tabela TACO (Unicamp). Itens marcados como “estimado” foram calculados pela IA; ajuste a quantidade se precisar.</p>` : `<div class="row"><button class="btn sm ghost" type="button" id="editAtual">Corrigir valores</button></div>`}`;
   if ($("editAtual")) $("editAtual").onclick = () => abrirEditor(atual);
+  if ($("baseOk")) $("baseOk").onclick = () => avaliarNaBase("confirma");
+  if ($("baseErro")) $("baseErro").onclick = () => avaliarNaBase("denuncia");
   if (atual.itens){
     const refazer = itens => {
       if (!itens.length){ setStatus("A refeição ficou sem ingredientes.","err"); return; }
@@ -1584,7 +1655,7 @@ function abrirEditor(prod, titulo){
 }
 $("manualBtn").onclick = () => abrirEditor(null);
 $("editorCancel").onclick = () => { $("editor").hidden = true; };
-$("editor").addEventListener("submit", e => {
+$("editor").addEventListener("submit", async e => {
   e.preventDefault();
   const n = {}; NUTS.forEach(([k]) => n[k] = num($("e-"+k).value));
   if (n.kcal == null){ $("e-kcal").focus(); setStatus("Informe pelo menos o valor energético (kcal).","err"); return; }
@@ -1597,7 +1668,10 @@ $("editor").addEventListener("submit", e => {
   delete prod.exemplo;
   if (editandoBase && chave(editandoBase) !== chave(prod) && !editandoBase.exemplo) delete catalogo[chave(editandoBase)];
   $("editor").hidden = true; setStatus("");
-  salvarAtual(prod);
+  if (!prod.code && codigoPendente && Date.now() - codigoPendente.t < 15*60e3) prod.code = codigoPendente.c;
+  codigoPendente = null;
+  delete prod.base;
+  salvarAtual(await enviarParaBase(prod));
 });
 
 /* ---------- status ---------- */
@@ -1640,7 +1714,14 @@ function deOFF(code, pr){
 }
 async function buscarCodigo(code){
   $("barcode").value = code;
-  setStatus(`Buscando o código ${esc(code)} na base Open Food Facts…`);
+  codigoPendente = {c:String(code), t:Date.now()};
+  setStatus(`Buscando o código ${esc(code)}…`);
+  const daBase = await buscarNaBase(code);
+  if (daBase && daBase.n && daBase.n.kcal != null){
+    codigoPendente = null;
+    setStatus("Produto encontrado na base do Rótulo Certo, cadastrada pelos usuários.", "ok");
+    salvarAtual(daBase); return "ok";
+  }
   const link = `<a href="https://br.openfoodfacts.org/produto/${encodeURIComponent(code)}" target="_blank" rel="noopener">ver o produto no Open Food Facts</a>`;
   let j;
   try{
@@ -1649,12 +1730,16 @@ async function buscarCodigo(code){
     else if (!res.ok) throw new Error("http " + res.status);
     else j = await res.json();
   }catch(err){
-    setStatus(`Código ${esc(code)} lido, mas esta tela do Claude não permite acessar sites externos, então a busca na base fica bloqueada aqui. Fotografe a tabela nutricional, digite os valores ou ${link}. No site hospedado, a busca funciona.`,"err");
+    const dentroDoClaude = (() => { try{ return window.top !== window.self; }catch(e){ return true; } })();
+    setStatus(dentroDoClaude
+      ? `Código ${esc(code)} lido, mas esta tela do Claude não permite acessar sites externos. Fotografe a tabela nutricional, digite os valores ou ${link}. No app publicado, a busca funciona.`
+      : `Não consegui consultar a base Open Food Facts agora (sem internet ou site fora do ar). Fotografe a tabela nutricional ou digite os valores: o produto fica salvo na base do Rótulo Certo.`, "err");
     return "bloqueado";
   }
   if (j.status !== 1 || !j.product){ setStatus(`O código ${esc(code)} ainda não está na base. Fotografe a tabela nutricional ou digite os valores.`,"err"); return "naoachou"; }
   const prod = deOFF(code, j.product);
   if (prod.n.kcal == null){ setStatus("Achamos o produto, mas sem tabela nutricional. Fotografe o rótulo para completar.","err"); abrirEditor(prod,"Complete os valores"); return "semtabela"; }
+  codigoPendente = null;
   setStatus("Produto encontrado na base Open Food Facts.","ok");
   salvarAtual(prod);
   return "ok";
@@ -1779,7 +1864,10 @@ async function processarFotos(files){
     if (n.kcal == null){ setStatus("Li o rótulo, mas faltou o valor energético. Confira os números abaixo.","err"); abrirEditor(prod,"Confira os valores lidos"); return; }
     setStatus("Rótulo lido. Confira os números na tabela e corrija se algo saiu diferente da embalagem.","ok");
     $("fotoNome").value = "";
-    salvarAtual(prod);
+    if (codigoPendente && Date.now() - codigoPendente.t < 15*60e3) prod.code = codigoPendente.c;
+    codigoPendente = null;
+    const prodBase = await enviarParaBase(prod);
+    salvarAtual(prodBase);
     if (!nomeDigitado) abrirRenomear();
   }catch(err){
     const msgs = {not_granted:"Você não permitiu o uso do Claude nesta página. Digite os valores do rótulo.",
@@ -2091,6 +2179,281 @@ $("relCopiar").onclick = async () => {
   try{ await navigator.clipboard.writeText($("relTexto").value); avisoDados("Relatório copiado. Cole no WhatsApp, e-mail ou onde quiser.", "ok"); }
   catch(e){ $("relTexto").focus(); $("relTexto").select(); avisoDados("Texto selecionado. Use Copiar do seu aparelho.", ""); }
 };
+
+/* ---------- conta, sincronização e base própria de produtos ---------- */
+var sessaoConta = store.get("rc2.sessao", null);       // {token, usuario}
+var syncVersao = store.get("rc2.syncVersao", 0);
+var syncSujo = store.get("rc2.syncSujo", false);
+var syncTimer = null, syncEnviando = false, servidorContas = null, codigoPendente = null;
+function logado(){ return !!(sessaoConta && sessaoConta.token); }
+async function apiConta(metodo, caminho, corpo){
+  const h = {"Content-Type":"application/json"};
+  if (logado()) h.Authorization = "Bearer " + sessaoConta.token;
+  let r;
+  try{ r = await fetch(caminho, {method:metodo, headers:h, body: corpo ? JSON.stringify(corpo) : undefined}); }
+  catch(e){ return {status:0, j:{mensagem:"Sem conexão com o servidor. Verifique a internet."}}; }
+  let j = null; try{ j = await r.json(); }catch(e){}
+  if (r.status === 401 && logado() && j?.erro === "sem_login"){ encerrarSessaoLocal(false); msgConta("Sua sessão expirou. Entre de novo.", "err"); }
+  return {status:r.status, j: j || {}};
+}
+function msgConta(texto, tipo){ const s = $("contaMsg"); if (!texto){ s.hidden = true; return; } s.hidden = false; s.className = "status" + (tipo ? " " + tipo : ""); s.textContent = texto; }
+function textoSync(t){ $("syncStatus").textContent = t || ""; }
+
+function dadosLocais(){ return {perfis, ativo:ativoId, catalogo, hist:historico, fav:favs, compras, diario, pesos}; }
+function aplicarDados(d){
+  if (!d || !Array.isArray(d.perfis) || !d.perfis.length) return;
+  perfis = d.perfis; ativoId = perfis.some(p => p.id === d.ativo) ? d.ativo : perfis[0].id; editandoId = ativoId;
+  catalogo = d.catalogo || {}; historico = d.hist || []; favs = d.fav || []; compras = d.compras || []; diario = d.diario || {}; pesos = d.pesos || {};
+  store.set("rc2.perfis", perfis); store.set("rc2.ativo", ativoId); store.set("rc2.catalogo", catalogo); store.set("rc2.hist", historico);
+  store.set("rc2.fav", favs); store.set("rc2.compras", compras); store.set("rc2.diario", diario); store.set("rc2.pesos", pesos);
+  tudo();
+}
+/* junta dois conjuntos de dados sem perder nada (usado no primeiro login e em conflitos) */
+function mesclar(a, b){
+  if (!b) return a; if (!a) return b;
+  const porId = (x, y, k = "id") => { const m = new Map(); for (const i of (y||[])) m.set(i[k], i); for (const i of (x||[])) m.set(i[k], i); return [...m.values()]; };
+  const todosPerfis = porId(a.perfis, b.perfis), reais = todosPerfis.filter(p => !p.exemplo);
+  const perfisM = reais.length ? reais : todosPerfis;
+  const diarioM = {};
+  for (const fonte of [b.diario || {}, a.diario || {}]) for (const [pid, dias] of Object.entries(fonte)) {
+    diarioM[pid] = diarioM[pid] || {};
+    for (const [d, itens] of Object.entries(dias)) diarioM[pid][d] = porId(itens, diarioM[pid][d]);
+  }
+  const pesosM = {};
+  for (const pid of new Set([...Object.keys(a.pesos||{}), ...Object.keys(b.pesos||{})])) pesosM[pid] = porId(a.pesos?.[pid], b.pesos?.[pid], "d").sort((x, y) => x.d.localeCompare(y.d));
+  const histM = porId(a.hist, b.hist, "k").sort((x, y) => (y.quando||0) - (x.quando||0)).slice(0, 12);
+  return {perfis: perfisM.length ? perfisM : (a.perfis || b.perfis), ativo: a.ativo, catalogo: {...(b.catalogo||{}), ...(a.catalogo||{})}, hist: histM,
+    fav: [...new Set([...(a.fav||[]), ...(b.fav||[])])], compras: porId(a.compras, b.compras), diario: diarioM, pesos: pesosM};
+}
+const temDadosProprios = d => (d.perfis||[]).some(p => !p.exemplo) || Object.keys(d.diario||{}).length || Object.keys(d.pesos||{}).length || (d.fav||[]).length;
+
+function marcarSujo(){
+  if (!logado()) return;
+  syncSujo = true; store.set("rc2.syncSujo", true);
+  clearTimeout(syncTimer); syncTimer = setTimeout(enviarDados, 2000);
+  textoSync("Alterações a enviar");
+}
+async function enviarDados(tentativa = 0){
+  if (!logado() || syncEnviando) return;
+  if (!navigator.onLine){ textoSync("Sem internet · envia quando voltar"); return; }
+  syncEnviando = true; textoSync("Enviando…");
+  try{
+    const r = await apiConta("PUT", "/api/dados", {dados: dadosLocais(), versaoBase: syncVersao});
+    if (r.status === 200){ syncVersao = r.j.versao; syncSujo = false; store.set("rc2.syncVersao", syncVersao); store.set("rc2.syncSujo", false); textoSync("✓ Sincronizado"); }
+    else if (r.status === 409 && tentativa < 2){
+      aplicarDados(mesclar(dadosLocais(), r.j.dados)); syncVersao = r.j.versao; store.set("rc2.syncVersao", syncVersao);
+      syncEnviando = false; return enviarDados(tentativa + 1);
+    }
+    else if (r.status === 0) textoSync("Sem internet · envia quando voltar");
+    else if (r.status === 413) textoSync("Dados grandes demais"), msgConta(r.j.mensagem || "Seus dados passaram do limite.", "err");
+    else if (logado()) textoSync("Não sincronizou · tente de novo");
+  } finally { syncEnviando = false; }
+}
+async function puxarDados(primeiroLogin){
+  if (!logado()) return;
+  textoSync("Atualizando…");
+  const r = await apiConta("GET", "/api/dados");
+  if (r.status !== 200){ textoSync(r.status === 0 ? "Sem internet" : ""); return; }
+  const local = dadosLocais();
+  if (!r.j.dados){ syncVersao = 0; store.set("rc2.syncVersao", 0); if (temDadosProprios(local) || primeiroLogin){ await enviarDados(); } else textoSync("✓ Sincronizado"); return; }
+  if (primeiroLogin && temDadosProprios(local)){
+    aplicarDados(mesclar(local, r.j.dados)); syncVersao = r.j.versao; store.set("rc2.syncVersao", syncVersao);
+    msgConta("Juntamos os dados deste aparelho com os da sua conta.", "ok"); await enviarDados(); return;
+  }
+  if (primeiroLogin || r.j.versao > syncVersao){
+    if (syncSujo && !primeiroLogin) aplicarDados(mesclar(local, r.j.dados)); else aplicarDados(r.j.dados);
+    syncVersao = r.j.versao; store.set("rc2.syncVersao", syncVersao);
+    if (syncSujo) await enviarDados(); else textoSync("✓ Sincronizado");
+  } else if (syncSujo) await enviarDados(); else textoSync("✓ Sincronizado");
+}
+window.addEventListener("online", () => { if (syncSujo) enviarDados(); });
+document.addEventListener("visibilitychange", () => { if (document.visibilityState === "visible" && logado()) puxarDados(false); });
+
+function guardarSessao(s){ sessaoConta = s; store.set("rc2.sessao", s); }
+function encerrarSessaoLocal(apagarDados){
+  guardarSessao(null); syncVersao = 0; syncSujo = false; store.set("rc2.syncVersao", 0); store.set("rc2.syncSujo", false); textoSync("");
+  if (apagarDados){ try{ ["rc2.perfis","rc2.ativo","rc2.catalogo","rc2.hist","rc2.fav","rc2.compras","rc2.diario","rc2.pesos","rc.atual","rc.perfil","rc.hist"].forEach(k => localStorage.removeItem(k)); }catch(e){} location.reload(); return; }
+  renderConta();
+}
+async function aposEntrar(j, texto){
+  guardarSessao({token:j.token, usuario:j.usuario}); syncVersao = 0; store.set("rc2.syncVersao", 0);
+  $("cSenha").value = ""; renderConta(); msgConta(texto, "ok");
+  await puxarDados(true);
+}
+
+function renderConta(){
+  const semServ = servidorContas === false;
+  $("contaSemServidor").hidden = !semServ;
+  $("contaFora").hidden = semServ || logado() || servidorContas === null;
+  $("contaDentro").hidden = semServ || !logado();
+  if (logado()){
+    $("contaEmail").textContent = sessaoConta.usuario?.email || "";
+    $("excluirSenha").placeholder = sessaoConta.usuario?.temSenha === false ? "Digite EXCLUIR" : "Sua senha";
+    $("excluirSenha").type = sessaoConta.usuario?.temSenha === false ? "text" : "password";
+  }
+  $("adminCard").hidden = !(logado() && sessaoConta.usuario?.admin);
+  if (!$("adminCard").hidden) carregarAdmin();
+  const nota = document.querySelector("#dadosCard > p.small.muted");
+  if (nota) nota.textContent = logado() ? "Seus dados estão salvos na sua conta e neste aparelho. O backup continua útil como cópia extra." : "Tudo fica salvo só neste aparelho. Crie uma conta ou faça um backup para não perder o histórico se trocar de celular ou limpar o navegador.";
+}
+let modoCriar = false;
+function trocarModo(criar){
+  modoCriar = criar;
+  $("modoEntrar").setAttribute("aria-pressed", !criar); $("modoCriar").setAttribute("aria-pressed", criar);
+  $("campoNome").hidden = !criar; $("contaEnviar").textContent = criar ? "Criar conta" : "Entrar";
+  $("cSenha").autocomplete = criar ? "new-password" : "current-password";
+  $("cSenha").placeholder = criar ? "Pelo menos 8 caracteres" : "";
+  msgConta("");
+}
+$("modoEntrar").onclick = () => trocarModo(false);
+$("modoCriar").onclick = () => trocarModo(true);
+$("contaForm").onsubmit = async e => {
+  e.preventDefault();
+  const email = $("cEmail").value.trim(), senha = $("cSenha").value;
+  if (!email || !senha){ msgConta("Preencha e-mail e senha.", "err"); return; }
+  if (modoCriar && !$("cConsent").checked){ msgConta("Para criar a conta, marque a caixa da Política de Privacidade.", "err"); return; }
+  $("contaEnviar").disabled = true; msgConta(modoCriar ? "Criando conta…" : "Entrando…");
+  const r = await apiConta("POST", modoCriar ? "/api/conta/criar" : "/api/conta/entrar", {email, senha, nome:$("cNome").value.trim(), consentimento:$("cConsent").checked});
+  $("contaEnviar").disabled = false;
+  if (r.status === 200) aposEntrar(r.j, modoCriar ? "Conta criada. Seus dados agora ficam salvos nela." : "Pronto, você entrou.");
+  else msgConta(r.j.mensagem || "Não deu certo. Tente de novo.", "err");
+};
+$("esqueciBtn").onclick = () => { $("esqueciForm").hidden = !$("esqueciForm").hidden; $("esqueciEmail").value = $("cEmail").value; };
+$("esqueciForm").onsubmit = async e => {
+  e.preventDefault();
+  const email = $("esqueciEmail").value.trim(); if (!email) return;
+  const r = await apiConta("POST", "/api/conta/esqueci", {email});
+  if (r.status === 200) msgConta("Se existir uma conta com esse e-mail, enviamos um link para criar uma nova senha. Veja também a caixa de spam.", "ok");
+  else msgConta(r.j.mensagem || "Não deu para enviar agora.", "err");
+};
+$("syncAgora").onclick = async () => { await puxarDados(false); if (syncSujo) await enviarDados(); };
+$("sairBtn").onclick = () => { $("sairConfirma").hidden = false; $("excluirContaConfirma").hidden = true; };
+$("sairCancelar").onclick = () => { $("sairConfirma").hidden = true; };
+const sair = async apagar => {
+  if (syncSujo) await enviarDados();
+  await apiConta("POST", "/api/conta/sair");
+  try{ window.google?.accounts?.id?.disableAutoSelect(); }catch(e){}
+  $("sairConfirma").hidden = true; encerrarSessaoLocal(apagar); msgConta("Você saiu da conta.", "");
+};
+$("sairManter").onclick = () => sair(false);
+$("sairApagar").onclick = () => sair(true);
+$("excluirContaBtn").onclick = () => { $("excluirContaConfirma").hidden = false; $("sairConfirma").hidden = true; $("excluirSenha").focus(); };
+$("excluirContaNao").onclick = () => { $("excluirContaConfirma").hidden = true; $("excluirSenha").value = ""; };
+$("excluirContaSim").onclick = async () => {
+  const v = $("excluirSenha").value;
+  const r = await apiConta("POST", "/api/conta/excluir", sessaoConta.usuario?.temSenha === false ? {confirmar:v.trim().toUpperCase()} : {senha:v});
+  if (r.status === 200){ $("excluirContaConfirma").hidden = true; encerrarSessaoLocal(true); }
+  else msgConta(r.j.mensagem || "Não deu para excluir agora.", "err");
+};
+
+/* Entrar com Google */
+function prepararGoogle(clientId){
+  $("googleArea").hidden = false;
+  const iniciar = () => {
+    try{
+      google.accounts.id.initialize({client_id:clientId, callback: async resp => {
+        msgConta("Entrando com Google…");
+        const r = await apiConta("POST", "/api/conta/google", {credencial:resp.credential, consentimento:$("cConsent").checked});
+        if (r.status === 200) aposEntrar(r.j, "Pronto, você entrou com Google.");
+        else if (r.j.erro === "consentimento"){ trocarModo(true); msgConta("Conta nova: marque a caixa da Política de Privacidade e toque de novo em “Continuar com Google”.", "err"); }
+        else msgConta(r.j.mensagem || "Não deu para entrar com Google.", "err");
+      }});
+      google.accounts.id.renderButton($("googleBtn"), {theme:"outline", size:"large", text:"continue_with", shape:"pill", locale:"pt-BR", width:280});
+    }catch(e){ $("googleArea").hidden = true; }
+  };
+  if (window.google?.accounts?.id) return iniciar();
+  const sc = document.createElement("script"); sc.src = "https://accounts.google.com/gsi/client"; sc.async = true; sc.onload = iniciar; sc.onerror = () => { $("googleArea").hidden = true; };
+  document.head.append(sc);
+}
+
+/* página de criar nova senha (link do e-mail) */
+function prepararRedefinir(){
+  if (location.pathname !== "/redefinir") return;
+  const token = new URLSearchParams(location.search).get("token");
+  const card = $("redefinirCard"); if (!card || !token) return;
+  card.hidden = false;
+  $("redefinirForm").onsubmit = async e => {
+    e.preventDefault();
+    const senha = $("novaSenha").value;
+    if (senha.length < 8){ $("redefinirMsg").hidden = false; $("redefinirMsg").textContent = "A senha precisa ter pelo menos 8 caracteres."; return; }
+    const r = await apiConta("POST", "/api/conta/redefinir", {token, senha});
+    $("redefinirMsg").hidden = false;
+    if (r.status === 200){ history.replaceState(null, "", "/#perfil"); card.hidden = true; await aposEntrar(r.j, "Senha alterada. Você já entrou na conta."); rota(); }
+    else $("redefinirMsg").textContent = r.j.mensagem || "Não deu certo. Peça um novo link.";
+  };
+}
+
+/* painel de administração da base */
+async function carregarAdmin(){
+  const [res, lista] = await Promise.all([apiConta("GET", "/api/admin/resumo"), apiConta("GET", "/api/admin/produtos?filtro=" + $("adminFiltro").value)]);
+  if (res.status !== 200){ $("adminCard").hidden = true; return; }
+  $("adminResumo").innerHTML = `<div class="tile"><b>${fmt(res.j.produtos,0)}</b><span>produtos na base</span></div><div class="tile"><b>${fmt(res.j.novos7,0)}</b><span>novos em 7 dias</span></div><div class="tile"><b>${fmt(res.j.revisao,0)}</b><span>em revisão</span></div>`;
+  const ps = lista.j.produtos || [];
+  $("adminLista").innerHTML = ps.length ? ps.map(p => `<div class="item" style="grid-template-columns:1fr;gap:6px">
+      <span class="nm"><b>${esc(p.nome || p.codigo)}</b> <span class="muted small">· ${esc(p.codigo)} · ✓ ${p.confirmacoes} · ⚑ ${p.denuncias} · ${p.escaneamentos} buscas${p.status === "revisao" ? " · <b>em revisão</b>" : ""}</span></span>
+      <span class="row"><button class="btn sm" type="button" data-adm="aprovar" data-c="${esc(p.codigo)}">Aprovar</button>${p.versoes ? `<button class="btn sm" type="button" data-adm="voltar" data-c="${esc(p.codigo)}">Voltar versão anterior</button>` : ""}<button class="btn sm danger ghost" type="button" data-adm="apagar" data-c="${esc(p.codigo)}">Apagar</button></span></div>`).join("")
+    : '<p class="none">Nada nesta lista.</p>';
+  $("adminLista").querySelectorAll("button[data-adm]").forEach(b => b.onclick = async () => {
+    if (b.dataset.adm === "apagar" && b.dataset.ok !== "1"){ b.dataset.ok = "1"; b.textContent = "Tocar de novo para apagar"; return; }
+    const r = await apiConta("POST", "/api/admin/produtos/" + b.dataset.c, {acao:b.dataset.adm});
+    if (r.status !== 200) msgConta(r.j.mensagem || "Não deu certo.", "err");
+    carregarAdmin();
+  });
+}
+$("adminFiltro").onchange = carregarAdmin;
+
+/* base própria: buscar, cadastrar e avaliar produtos */
+async function buscarNaBase(code){
+  if (!servidorContas) return null;
+  const r = await apiConta("GET", "/api/produtos/" + encodeURIComponent(code));
+  if (r.status !== 200 || !r.j.produto) return null;
+  return {...r.j.produto, code:String(code), base:{confirmacoes:r.j.confirmacoes, denuncias:r.j.denuncias, meu:r.j.meu, minha:r.j.minhaAvaliacao}};
+}
+async function enviarParaBase(prod){
+  if (!servidorContas || !prod.code || prod.exemplo || prod.refeicao) return prod;
+  if (!logado()){ setStatus($("status").innerHTML + `<br><small>Entre na sua conta (aba Perfil) para salvar este produto na base e ajudar outras pessoas.</small>`, $("status").className.replace("status","").trim()); return prod; }
+  const {base, ...limpo} = prod;
+  const r = await apiConta("POST", "/api/produtos", {codigo:prod.code, produto:limpo});
+  if (r.status !== 200) return prod;
+  return {...prod, base:{confirmacoes:r.j.confirmacoes, denuncias:r.j.denuncias, meu:true, minha:null}};
+}
+async function avaliarNaBase(tipo){
+  if (!atual?.code) return;
+  const r = await apiConta("POST", `/api/produtos/${atual.code}/avaliar`, {tipo});
+  if (r.status === 200){
+    atual = {...atual, base:{confirmacoes:r.j.confirmacoes, denuncias:r.j.denuncias, meu:r.j.meu, minha:r.j.minhaAvaliacao}};
+    guardarNoCatalogo(atual); salvar(); renderResultado();
+    if (tipo === "denuncia") setStatus("Obrigado. Se souber os valores certos, toque em “Corrigir valores” e salve: a correção entra na base para todos.", "ok");
+  } else setStatus(esc(r.j.mensagem || "Não deu para registrar agora."), "err");
+}
+function baseHTML(prod){
+  if (!servidorContas || !prod.code || prod.exemplo) return "";
+  if (!prod.base) return "";
+  const b = prod.base, conf = b.confirmacoes || 0;
+  const selo = conf >= 2 ? `<span class="faixa" style="background:var(--good)">✓ Confirmado por ${conf} pessoas</span>` : `<span class="faixa" style="background:var(--muted)">Cadastrado por usuário${conf === 1 ? " · 1 confirmação" : ""}</span>`;
+  const botoes = !logado() ? `<p class="small muted">Entre na conta para confirmar ou corrigir.</p>`
+    : b.meu ? `<p class="small muted">Você cadastrou ou corrigiu este produto. Outras pessoas podem confirmar.</p>`
+    : `<div class="row"><button class="btn sm" type="button" id="baseOk" aria-pressed="${b.minha === "confirma"}">Os dados estão certos</button><button class="btn sm" type="button" id="baseErro" aria-pressed="${b.minha === "denuncia"}">Estão errados</button></div>`;
+  return `<div class="status" style="display:flex;flex-direction:column;gap:8px;background:var(--bg)"><div class="row"><b class="small">Base Rótulo Certo</b>${selo}</div>${botoes}</div>`;
+}
+
+/* ao abrir o app: descobre se o servidor tem contas e atualiza os dados */
+(async () => {
+  try{
+    const r = await fetch("/api/config", {headers:{Accept:"application/json"}});
+    const c = r.ok ? await r.json() : null;
+    servidorContas = !!c?.contas;
+    if (c && !c.contas) $("contaSemServidor").textContent = "As contas ainda não estão ligadas neste servidor: falta adicionar o banco de dados PostgreSQL no Railway. Enquanto isso, seus dados ficam só neste aparelho; use o backup abaixo.";
+    if (servidorContas && c.google) prepararGoogle(c.google);
+  }catch(e){ servidorContas = false; }
+  renderConta(); prepararRedefinir();
+  if (servidorContas && logado()){
+    const eu = await apiConta("GET", "/api/conta/eu");
+    if (eu.status === 200){ guardarSessao({...sessaoConta, usuario:eu.j.usuario}); renderConta(); }
+    await puxarDados(false);
+  }
+  renderResultado();
+})();
 
 /* ---------- app instalável (PWA) ---------- */
 const noSiteProprio = (() => { try{ return window.top === window.self; }catch(e){ return false; } })();

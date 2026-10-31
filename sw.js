@@ -1,6 +1,6 @@
 // Rótulo Certo — service worker: deixa o app abrir sem internet.
 // Ao publicar uma versão nova do app, aumente o número abaixo.
-const VERSAO = "rotulo-certo-v1";
+const VERSAO = "rotulo-certo-v2";
 const ESSENCIAIS = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/favicon.png"];
 const EXTERNOS = ["https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"];
 
@@ -28,11 +28,11 @@ self.addEventListener("fetch", ev => {
   if (/openfoodfacts\.org$/.test(url.hostname)) return;   // base de produtos: sempre on-line
 
   // página do app: tenta a rede (para pegar versão nova) e usa a cópia guardada se estiver sem internet
-  if (req.mode === "navigate" || (url.origin === location.origin && url.pathname === "/")) {
+  if (url.origin === location.origin && (url.pathname === "/" || url.pathname === "/index.html")) {
     ev.respondWith((async () => {
       try {
         const r = await fetch(req);
-        const c = await caches.open(VERSAO); c.put("/", r.clone());
+        if (r.ok) { const c = await caches.open(VERSAO); c.put("/", r.clone()); }
         return r;
       } catch (e) {
         return (await caches.match("/")) || Response.error();
@@ -40,6 +40,7 @@ self.addEventListener("fetch", ev => {
     })());
     return;
   }
+  if (req.mode === "navigate") return; // /privacidade, /redefinir: sempre da rede
 
   // ícones, leitor de código de barras e fontes: usa a cópia e atualiza em segundo plano
   if (url.origin === location.origin || /unpkg\.com|fonts\.(googleapis|gstatic)\.com/.test(url.hostname)) {
