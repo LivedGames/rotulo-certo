@@ -150,6 +150,8 @@ textarea{resize:vertical;min-height:64px;line-height:1.4}
 .lista{display:flex;flex-direction:column;gap:6px}
 .item{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:500 .9rem var(--f-body);color:var(--ink);text-align:left}
 button.item{cursor:pointer;width:100%}
+.hrow{display:grid;grid-template-columns:1fr auto;gap:4px;align-items:center}
+.hrow > .item{min-width:0}
 .item .n{font-family:var(--f-display);font-weight:800;font-size:1.1rem;text-align:center;font-variant-numeric:tabular-nums;border-radius:8px;padding:3px 0;color:#fff}
 .item .d{color:var(--muted);font-size:.78rem;white-space:nowrap}
 .item .nm{min-width:0;overflow-wrap:anywhere}
@@ -328,7 +330,14 @@ details summary{cursor:pointer;font-weight:600}
     </div>
 
     <div class="card" id="histCard" hidden>
-      <h3>Analisados recentemente</h3>
+      <div class="row" style="justify-content:space-between">
+        <h3>Analisados recentemente</h3>
+        <button class="btn sm ghost danger" type="button" id="histLimpar">Limpar histórico</button>
+      </div>
+      <div class="status err" id="histConfirma" hidden>
+        <p style="margin-bottom:8px">Apagar todos os produtos do histórico? Favoritos, lista de compras e diário não mudam.</p>
+        <div class="row"><button class="btn sm danger" type="button" id="histSim">Apagar histórico</button><button class="btn sm" type="button" id="histNao">Cancelar</button></div>
+      </div>
       <div class="lista" id="hist"></div>
     </div>
   </section>
@@ -639,7 +648,7 @@ const ALIMENTOS = [
   ["Tapioca", ["tapioca","goma de tapioca"], [240,0,60,0,0,0,0.5,1], 60, {un:"unidade"}],
   ["Cuscuz de milho", ["cuscuz","cuscuz de milho"], [113,2.2,25.3,0,0.7,0.1,2.1,247], 150, {un:"porção"}],
   ["Batata-doce cozida", ["batata doce"], [77,0.6,18.4,0,0.1,0,2.2,3], 150, {un:"unidade"}],
-  ["Batata cozida", ["batata","batata inglesa","pure"], [52,1.2,11.9,0,0,0,1.3,2], 140, {un:"unidade"}],
+  ["Batata cozida", ["batata","batata inglesa","batata cozida"], [52,1.2,11.9,0,0,0,1.3,2], 140, {un:"unidade"}],
   ["Mandioca cozida", ["mandioca","aipim","macaxeira"], [125,0.6,30.1,0,0.3,0.1,1.6,1], 100, {un:"pedaço"}],
   // carnes e peixes
   ["Frango grelhado", ["frango","peito de frango","file de frango","frango grelhado"], [159,32,0,0,2.5,0.7,0,50], 100, {un:"filé", tags:["origem_animal"]}],
@@ -669,7 +678,29 @@ const ALIMENTOS = [
   ["Café sem açúcar", ["cafe","cafe preto","cafezinho","expresso"], [4,0.3,0.5,0,0,0,0,1], 50, {l:1, un:"xícara", xi:50}],
   ["Suco de laranja natural", ["suco de laranja","suco"], [33,0.7,7.6,0,0.1,0,0.2,1], 200, {l:1, un:"copo"}],
   ["Água de coco", ["agua de coco"], [22,0,5.3,0,0,0,0.1,7], 200, {l:1, un:"copo"}],
-  ["Água", ["agua"], [0,0,0,0,0,0,0,0], 200, {l:1, un:"copo"}]
+  ["Água", ["agua"], [0,0,0,0,0,0,0,0], 200, {l:1, un:"copo"}],
+  // pratos e lanches prontos (valores médios de receitas comuns; variam conforme o preparo)
+  ["Strogonoff de frango", ["strogonoff de frango","estrogonofe de frango","strogonof de frango","estrogonofe","strogonoff","strogonof"], [157,17.6,3,0,8,3.5,0.3,400], 150, {un:"porção", co:150, cs:30, tags:["lactose","origem_animal"], nova:3, fonte:"média de receitas"}],
+  ["Strogonoff de carne", ["strogonoff de carne","estrogonofe de carne","strogonof de carne"], [173,15,3,0,11,5.5,0.3,400], 150, {un:"porção", co:150, cs:30, tags:["lactose","origem_animal"], nova:3, fonte:"média de receitas"}],
+  ["Lasanha à bolonhesa", ["lasanha","lasanha a bolonhesa","lasanha de carne"], [160,8.5,13,0,8,4,1,350], 250, {un:"pedaço", tags:["gluten","lactose","origem_animal"], nova:3, fonte:"média de receitas"}],
+  ["Feijoada", ["feijoada"], [117,8.7,11.6,0,6.5,2.4,5.1,350], 200, {un:"concha", co:200, tags:["origem_animal"], nova:3, fonte:"TACO"}],
+  ["Farofa", ["farofa"], [406,2.1,80,0,9,3,7,500], 15, {un:"colher", cs:15, nova:3, fonte:"média de receitas"}],
+  ["Coxinha de frango", ["coxinha","coxinha de frango"], [283,9.6,34.5,0,11.8,3.4,1.5,532], 80, {un:"unidade", tags:["gluten","origem_animal"], nova:4, fonte:"TACO"}],
+  ["Pastel de carne", ["pastel","pastel de carne"], [388,10.1,43.8,0,20.1,6,1.5,550], 80, {un:"unidade", tags:["gluten","origem_animal"], nova:4, fonte:"TACO"}],
+  ["Pizza de muçarela", ["pizza","pizza de mucarela","pizza de mussarela","pizza de queijo"], [260,11,30,1,10,5,1.6,600], 110, {un:"fatia", fa:110, tags:["gluten","lactose","origem_animal"], nova:4, fonte:"média de receitas"}],
+  ["Hambúrguer (sanduíche)", ["hamburguer","x burguer","xburguer","x-burguer","sanduiche de hamburguer"], [250,13,25,2,11,4.5,1.2,480], 200, {un:"unidade", tags:["gluten","lactose","origem_animal"], nova:4, fonte:"média de lanchonetes"}],
+  ["Misto quente", ["misto quente","misto"], [280,14,28,1,12,6,1.2,800], 120, {un:"unidade", tags:["gluten","lactose","origem_animal"], nova:4, fonte:"média de receitas"}],
+  ["Açaí na tigela", ["acai","acai na tigela"], [110,0.7,21.5,15,3.7,0.9,2.6,10], 300, {un:"tigela", nova:4, fonte:"TACO (com xarope de guaraná)"}],
+  ["Batata frita", ["batata frita","fritas"], [267,5,35.6,0,13.1,2.8,8.1,240], 100, {un:"porção", nova:3, fonte:"TACO"}],
+  ["Frango assado", ["frango assado","coxa de frango","sobrecoxa"], [210,26,0,0,11.5,3.2,0,90], 120, {un:"pedaço", tags:["origem_animal"], fonte:"média de receitas"}],
+  ["Frango frito ou à milanesa", ["frango frito","frango a milanesa","file a milanesa","frango empanado","nuggets"], [254,22,9,0,14,3.5,0.5,450], 100, {un:"filé", tags:["gluten","origem_animal"], nova:3, fonte:"média de receitas"}],
+  ["Purê de batata", ["pure de batata","pure"], [90,2,13,0,3.6,2,1,250], 150, {un:"porção", cs:40, tags:["lactose","origem_animal"], nova:3, fonte:"média de receitas"}],
+  ["Salada de frutas", ["salada de frutas","salada de fruta"], [60,0.6,15,0,0.2,0,1.5,2], 200, {un:"tigela"}],
+  ["Bolo simples", ["bolo","bolo de fuba","bolo de cenoura","bolo de laranja"], [340,5,55,25,11,3,1,250], 60, {un:"fatia", fa:60, tags:["gluten","lactose","origem_animal"], nova:3, fonte:"média de receitas"}],
+  ["Sorvete", ["sorvete"], [200,3.5,24,20,10,6,0.5,70], 60, {un:"bola", tags:["lactose","origem_animal"], nova:4, fonte:"média de rótulos"}],
+  ["Brigadeiro", ["brigadeiro"], [430,4,60,50,18,10,1.5,60], 15, {un:"unidade", tags:["lactose","origem_animal"], nova:3, fonte:"média de receitas"}],
+  ["Cerveja", ["cerveja","chopp","chope"], [41,0.3,3.3,0,0,0,0,4], 350, {l:1, un:"lata", nova:4, tags:["gluten"], fonte:"média de rótulos"}],
+  ["Refrigerante", ["refrigerante","refri","coca","guarana"], [42,0,10.6,10.6,0,0,0,10], 350, {l:1, un:"lata", nova:4, fonte:"média de rótulos"}]
 ].map(([nome, alias, n, u, o]) => ({nome, alias, u, l:!!o.l, un:o.un||"unidade", cs:o.cs, fa:o.fa, xi:o.xi, sc:o.sc, co:o.co, es:o.es,
   nova:o.nova ?? 1, tags:o.tags||[], fonte:o.fonte||"TACO",
   n:{kcal:n[0], prot:n[1], carb:n[2], acucarAdic:n[3], gord:n[4], gordSat:n[5], gordTrans:0, fibra:n[6], sodio:n[7]}}));
@@ -680,11 +711,16 @@ const ALIAS = ALIMENTOS.flatMap(a => a.alias.map(x => ({a, x: semAcento(x)}))).s
 
 function acharAlimento(txt){
   for (const {a, x} of ALIAS){
-    const re = new RegExp(`(^|[^a-z])${x.replace(/ /g, "s? (de |do |da )?")}s?([^a-z]|$)`);
-    if (re.test(txt)) return a;
+    const re = new RegExp(`(^|[^a-z])${x.replace(/-/g, "[- ]?").replace(/ /g, "s? (de |do |da |a )?")}s?([^a-z]|$)`);
+    if (re.test(txt)) return {a, re};
   }
   return null;
 }
+/* palavras que podem sobrar sem mudar o alimento; qualquer outra manda o item para a IA */
+const PALAVRAS_OK = new Set(("de do da dos das com sem um uma e ou no na em meu minha pouco pouca bem tipo mais so pra para " +
+  "cozido cozida cozidos cozidas grelhado grelhada grelhados cru crua crus natural naturais integral picado picada picados fatiado fatiada " +
+  "desfiado desfiada fresco fresca pequeno pequena pequenos medio media medios grande grandes cheio cheia rasa raso sal pele caseiro caseira " +
+  "inteiro inteira maduro madura verde vermelha amarela branca branco preto preta gelado gelada quente frio fria puro pura light").split(" "));
 
 /* Lê um pedaço como "2 colheres de aveia" e devolve {alimento, gramas} ou {desconhecido} */
 function lerPedaco(original){
@@ -708,8 +744,12 @@ function lerPedaco(original){
     ["un", /\b(unidades?|un|filés?|files?|bifes?|pedacos?|porcoes?|porcao|pratos?|punhados?)\b/]
   ];
   for (const [k, re] of medidas){ if (re.test(t)){ medida = k; t = t.replace(re, " "); break; } }
-  const a = acharAlimento(t);
-  if (!a) return {desconhecido: original.trim()};
+  const achado = acharAlimento(t);
+  if (!achado) return {desconhecido: original.trim()};
+  const a = achado.a;
+  const sobra = t.replace(achado.re, " ").replace(/\d+(\.\d+)?|\/|\b(um|uma|dois|duas|tres|quatro|cinco|seis|sete|oito|nove|dez|meio|meia)\b/g, " ")
+    .split(/[^a-z]+/).filter(w => w.length >= 3 && !PALAVRAS_OK.has(w));
+  if (sobra.length) return {desconhecido: original.trim()};
   if (gramas == null){
     const q = qtd ?? 1;
     const base = {
@@ -1062,9 +1102,22 @@ function itemHTML(prod, extra, attrs){
 function renderHist(){
   const itens = historico.map(h => ({h, p:produtoDe(h.k)})).filter(x => x.p);
   $("histCard").hidden = !itens.length;
-  $("hist").innerHTML = itens.map(({h,p}) => itemHTML(p, new Date(h.quando).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}), `data-k="${esc(h.k)}"`)).join("");
-  $("hist").querySelectorAll("button").forEach(b => b.onclick = () => abrirProduto(produtoDe(b.dataset.k)));
+  $("hist").innerHTML = itens.map(({h,p}) => `<div class="hrow">${itemHTML(p, new Date(h.quando).toLocaleDateString("pt-BR",{day:"2-digit",month:"short"}), `data-k="${esc(h.k)}"`)}<button class="x" type="button" data-rmh="${esc(h.k)}" aria-label="Excluir ${esc(p.nome)} do histórico">×</button></div>`).join("");
+  $("hist").querySelectorAll("button[data-k]").forEach(b => b.onclick = () => abrirProduto(produtoDe(b.dataset.k)));
+  $("hist").querySelectorAll("button[data-rmh]").forEach(b => b.onclick = () => excluirDoHistorico([b.dataset.rmh]));
 }
+/* tira do histórico; o produto só sai do aparelho se não estiver em favoritos, na lista de compras ou aberto na tela */
+function excluirDoHistorico(chaves){
+  historico = historico.filter(h => !chaves.includes(h.k));
+  for (const k of chaves){
+    const emUso = favs.includes(k) || compras.some(c => c.k === k) || (atual && chave(atual) === k);
+    if (!emUso) delete catalogo[k];
+  }
+  salvar(); renderHist();
+}
+$("histLimpar").onclick = () => { $("histConfirma").hidden = false; };
+$("histNao").onclick = () => { $("histConfirma").hidden = true; };
+$("histSim").onclick = () => { $("histConfirma").hidden = true; excluirDoHistorico(historico.map(h => h.k)); };
 
 /* ---------- alternativas ---------- */
 const CAMPOS_OFF = "code,product_name,brands,nutriments,serving_quantity,nova_group,allergens_tags,traces_tags,categories_tags,categories,nutrition_data_per,ingredients_analysis_tags,additives_tags,nutriscore_grade";
