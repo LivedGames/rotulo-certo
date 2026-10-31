@@ -3,6 +3,16 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="description" content="Nota de 0 a 10 para alimentos e refeições conforme a sua meta. Diário, progresso e peso.">
+<meta name="theme-color" content="#2C7A4B" media="(prefers-color-scheme: light)">
+<meta name="theme-color" content="#101512" media="(prefers-color-scheme: dark)">
+<link rel="manifest" href="/manifest.webmanifest">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="Rótulo Certo">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
 <style>:root{padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}body{margin:0;font:14px system-ui,sans-serif}img{max-width:100%}[hidden]{display:none!important}</style>
 </head>
 <body>
@@ -218,6 +228,14 @@ details summary{cursor:pointer;font-weight:600}
       <a href="#perfil" id="tab-perfil">Perfil</a>
     </nav>
   </header>
+
+  <div class="card instalar" id="instalarCard" hidden>
+    <div class="row" style="justify-content:space-between;flex-wrap:nowrap;align-items:flex-start">
+      <div style="min-width:0"><b>Instale o Rótulo Certo</b><p class="small muted" id="instalarTexto">Abre direto da tela inicial, em tela cheia, e funciona sem internet.</p></div>
+      <button class="x" type="button" id="instalarFechar" aria-label="Fechar aviso de instalação">×</button>
+    </div>
+    <button class="btn primary" type="button" id="instalarBtn" hidden>Instalar app</button>
+  </div>
 
   <!-- ANALISAR -->
   <section class="panel" id="view-analisar">
@@ -1893,6 +1911,33 @@ $("relCopiar").onclick = async () => {
   try{ await navigator.clipboard.writeText($("relTexto").value); avisoDados("Relatório copiado. Cole no WhatsApp, e-mail ou onde quiser.", "ok"); }
   catch(e){ $("relTexto").focus(); $("relTexto").select(); avisoDados("Texto selecionado. Use Copiar do seu aparelho.", ""); }
 };
+
+/* ---------- app instalável (PWA) ---------- */
+const noSiteProprio = (() => { try{ return window.top === window.self; }catch(e){ return false; } })();
+const instalado = matchMedia("(display-mode: standalone)").matches || navigator.standalone === true;
+if (noSiteProprio && "serviceWorker" in navigator && (location.protocol === "https:" || location.hostname === "localhost")){
+  window.addEventListener("load", () => navigator.serviceWorker.register("/sw.js").catch(() => {}));
+}
+let pedidoInstalar = null;
+const avisoFechado = () => store.get("rc2.instalarFechado", false);
+window.addEventListener("beforeinstallprompt", e => {
+  e.preventDefault(); pedidoInstalar = e;
+  if (!avisoFechado()){ $("instalarCard").hidden = false; $("instalarBtn").hidden = false; }
+});
+const ehIOS = /iphone|ipad|ipod/i.test(navigator.userAgent) || (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1);
+if (noSiteProprio && !instalado && ehIOS && !avisoFechado()){
+  $("instalarCard").hidden = false;
+  $("instalarTexto").innerHTML = "No Safari, toque em <b>Compartilhar</b> (o quadrado com a seta) e depois em <b>Adicionar à Tela de Início</b>.";
+}
+$("instalarBtn").onclick = async () => {
+  if (!pedidoInstalar) return;
+  pedidoInstalar.prompt();
+  const r = await pedidoInstalar.userChoice.catch(() => null);
+  pedidoInstalar = null; $("instalarBtn").hidden = true;
+  if (r?.outcome === "accepted") $("instalarCard").hidden = true;
+};
+$("instalarFechar").onclick = () => { $("instalarCard").hidden = true; store.set("rc2.instalarFechado", true); };
+window.addEventListener("appinstalled", () => { $("instalarCard").hidden = true; });
 
 /* ---------- navegação ---------- */
 const VIEWS = ["analisar","diario","listas","progresso","perfil"];

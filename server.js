@@ -243,6 +243,30 @@ http.createServer(async (req, res) => {
     return;
   }
 
+  // arquivos do app instalável (PWA)
+  const ESTATICOS = {
+    "/manifest.webmanifest": "application/manifest+json; charset=utf-8",
+    "/sw.js": "text/javascript; charset=utf-8",
+    "/icon-192.png": "image/png", "/icon-512.png": "image/png", "/icon-maskable-512.png": "image/png",
+    "/apple-touch-icon.png": "image/png", "/favicon.png": "image/png", "/favicon.ico": "image/png",
+  };
+  if (ESTATICOS[url.pathname]) {
+    try {
+      const arquivo = url.pathname === "/favicon.ico" ? "favicon.png" : url.pathname.slice(1);
+      const dados = await readFile(path.join(PASTA, arquivo));
+      res.setHeader("Content-Type", ESTATICOS[url.pathname]);
+      res.setHeader("Cache-Control", url.pathname === "/sw.js" ? "no-cache" : "public, max-age=86400");
+      return res.end(dados);
+    } catch {
+      return res.status(404).end("Não encontrado");
+    }
+  }
+  // Google Play (TWA): cole o conteúdo do assetlinks.json na variável ASSETLINKS_JSON do Railway
+  if (url.pathname === "/.well-known/assetlinks.json") {
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    return res.end(process.env.ASSETLINKS_JSON || "[]");
+  }
+
   if (url.pathname === "/" || url.pathname === "/index.html") {
     try {
       const html = await readFile(path.join(PASTA, "index.html"));

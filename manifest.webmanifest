@@ -1,0 +1,24 @@
+{
+  "id": "/",
+  "name": "Rótulo Certo",
+  "short_name": "Rótulo Certo",
+  "description": "Nota de 0 a 10 para alimentos e refeições conforme a sua meta: ganhar massa, emagrecer ou definir. Diário, progresso e peso.",
+  "lang": "pt-BR",
+  "dir": "ltr",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#F3F5EF",
+  "theme_color": "#2C7A4B",
+  "categories": ["health", "food", "lifestyle"],
+  "icons": [
+    { "src": "/icon-192.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-512.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/icon-maskable-512.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ],
+  "shortcuts": [
+    { "name": "Diário de hoje", "short_name": "Diário", "url": "/#diario", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] },
+    { "name": "Meu progresso", "short_name": "Progresso", "url": "/#progresso", "icons": [{ "src": "/icon-192.png", "sizes": "192x192" }] }
+  ]
+}
