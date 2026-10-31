@@ -41,7 +41,7 @@ header.top{display:flex;flex-direction:column;gap:14px;padding-top:18px}
 .brand{display:flex;align-items:center;gap:10px}
 .brand h1{font-family:var(--f-display);font-weight:800;font-size:1.55rem;letter-spacing:-.02em;margin:0;line-height:1}
 .brand small{display:block;color:var(--muted);font-size:.8rem;margin-top:3px}
-.tabs{display:grid;grid-template-columns:repeat(4,1fr);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
+.tabs{display:grid;grid-template-columns:repeat(5,1fr);background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:3px}
 .tabs a{font-weight:600;font-size:.86rem;text-align:center;text-decoration:none;color:var(--muted);padding:7px 4px;border-radius:999px;white-space:nowrap}
 .tabs a[aria-current="page"]{background:var(--ink);color:var(--bg)}
 a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,label.btn:focus-within{outline:2px solid var(--accent);outline-offset:2px}
@@ -174,7 +174,33 @@ button.item{cursor:pointer;width:100%}
 details summary{cursor:pointer;font-weight:600}
 .foot{font-size:.8rem;color:var(--muted);border-top:1px solid var(--line);padding-top:14px}
 #reader video{max-width:100%}
-@media (max-width:440px){.procon{grid-template-columns:1fr}.targets{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}.tabs a{font-size:.8rem}}
+/* progresso */
+.periodo{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.periodo .chip{text-align:center}
+.tiles{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.tile{background:var(--bg);border-radius:10px;padding:10px;min-width:0}
+.tile b{display:block;font-family:var(--f-display);font-weight:800;font-size:1.35rem;line-height:1.1;font-variant-numeric:tabular-nums}
+.tile span{font-size:.74rem;color:var(--muted);display:block;margin-top:2px}
+.tile .up{color:var(--bad)} .tile .down{color:var(--good)}
+.aviso-ex{background:var(--mid-soft);border-radius:10px;padding:10px 12px;font-size:.86rem}
+.chart{position:relative}
+.chart svg{display:block;width:100%;height:auto;overflow:visible;touch-action:pan-y}
+.chart .eixo{fill:var(--muted);font:500 10px var(--f-body);font-variant-numeric:tabular-nums}
+.chart .grade{stroke:var(--line);stroke-width:1}
+.chart .meta{stroke:var(--ink);stroke-width:1.5;stroke-dasharray:4 3;opacity:.7}
+.chart .metatxt{fill:var(--ink);font:700 10px var(--f-label);letter-spacing:.04em}
+.chart .bar{fill:var(--accent)}
+.chart .bar.ativo{fill:var(--ink)}
+.chart .linha{fill:none;stroke:var(--accent);stroke-width:2;stroke-linejoin:round;stroke-linecap:round}
+.chart .ponto{fill:var(--accent);stroke:var(--surface);stroke-width:2}
+.chart .mira{stroke:var(--muted);stroke-width:1}
+.chart .vazio{fill:var(--muted);font:500 12px var(--f-body)}
+.tip{position:absolute;pointer-events:none;background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:8px;padding:6px 9px;font-size:.8rem;line-height:1.35;box-shadow:0 4px 14px rgba(0,0,0,.12);white-space:nowrap;transform:translate(-50%,-110%)}
+.tip b{font-variant-numeric:tabular-nums}
+.tabdados{width:100%;border-collapse:collapse;font-size:.82rem;font-variant-numeric:tabular-nums;margin-top:8px}
+.tabdados th,.tabdados td{padding:5px 6px;border-bottom:1px solid var(--line);text-align:right}
+.tabdados th:first-child,.tabdados td:first-child{text-align:left}
+@media (max-width:440px){.procon{grid-template-columns:1fr}.targets{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}.tabs a{font-size:.74rem;padding:7px 2px}.tile b{font-size:1.15rem}}
 @media (prefers-reduced-motion:no-preference){.dial{transition:background .4s}.barra .enche{transition:width .4s}}
 </style>
 
@@ -188,6 +214,7 @@ details summary{cursor:pointer;font-weight:600}
       <a href="#analisar" id="tab-analisar">Analisar</a>
       <a href="#diario" id="tab-diario">Diário</a>
       <a href="#listas" id="tab-listas">Listas</a>
+      <a href="#progresso" id="tab-progresso">Progresso</a>
       <a href="#perfil" id="tab-perfil">Perfil</a>
     </nav>
   </header>
@@ -319,6 +346,36 @@ details summary{cursor:pointer;font-weight:600}
       <h2>Favoritos</h2>
       <p class="small muted">As notas são recalculadas para o perfil escolhido em "Para".</p>
       <div class="lista" id="favs"></div>
+    </div>
+  </section>
+
+  <!-- PROGRESSO -->
+  <section class="panel" id="view-progresso" hidden>
+    <div class="card">
+      <h2 id="progTitulo">Progresso</h2>
+      <div class="periodo" id="periodo" role="group" aria-label="Período"></div>
+      <div class="aviso-ex" id="progExemplo" hidden>Isto é um <b>exemplo</b> de como fica o progresso. Registre refeições no diário e o seu peso abaixo para ver os seus dados.</div>
+      <div class="tiles" id="progTiles"></div>
+      <h3>Média por dia registrado · % da meta</h3>
+      <div class="barras" id="progBarras"></div>
+    </div>
+    <div class="card">
+      <h2>Evolução dia a dia</h2>
+      <div class="chips" id="progMetrica" role="group" aria-label="Nutriente do gráfico"></div>
+      <div class="chart" id="graficoDia"></div>
+      <details class="small"><summary>Ver tabela</summary><div class="tablewrap" id="tabelaDia"></div></details>
+    </div>
+    <div class="card">
+      <h2>Peso</h2>
+      <form class="row" id="pesoForm" autocomplete="off">
+        <input type="number" id="pesoKg" min="25" max="300" step="0.1" placeholder="Peso (kg)" aria-label="Peso em kg" style="flex:1 1 110px">
+        <input type="date" id="pesoData" aria-label="Data da pesagem" style="flex:1 1 140px;font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:8px 10px">
+        <button class="btn primary" type="submit">Registrar</button>
+      </form>
+      <div class="tiles" id="pesoTiles"></div>
+      <div class="chart" id="graficoPeso"></div>
+      <p class="small muted" id="pesoNota"></p>
+      <details class="small"><summary>Ver pesagens</summary><div class="tablewrap" id="tabelaPeso"></div></details>
     </div>
   </section>
 
@@ -680,12 +737,13 @@ if (Array.isArray(histAntigo) && histAntigo.length && !historico.length){
 let favs = store.get("rc2.fav", []);
 let compras = store.get("rc2.compras", []);
 let diario = store.get("rc2.diario", {});
+let pesos = store.get("rc2.pesos", {});
 let atual = store.get("rc.atual", EXEMPLOS[0]);
 if (!atual || !atual.n) atual = EXEMPLOS[0];
 const salvar = () => {
   store.set("rc2.perfis", perfis); store.set("rc2.ativo", ativoId); store.set("rc2.catalogo", catalogo);
   store.set("rc2.hist", historico); store.set("rc2.fav", favs); store.set("rc2.compras", compras);
-  store.set("rc2.diario", diario); store.set("rc.atual", atual);
+  store.set("rc2.diario", diario); store.set("rc2.pesos", pesos); store.set("rc.atual", atual);
 };
 const produtoDe = k => catalogo[k] || EXEMPLOS.find(e => chave(e) === k) || null;
 
@@ -1087,6 +1145,190 @@ function renderDiario(){
 }
 $("diaAnt").onclick = () => { diaOff--; renderDiario(); };
 $("diaProx").onclick = () => { if (diaOff < 0){ diaOff++; renderDiario(); } };
+
+/* ---------- progresso ---------- */
+const MET_PROG = [["kcal","Calorias","kcal",false],["prot","Proteína","g",false],["carb","Carboidrato","g",false],["gord","Gordura","g",false],
+  ["fibra","Fibra","g",false],["acucarAdic","Açúcar adicionado","g",true],["gordSat","Gordura saturada","g",true],["sodio","Sódio","mg",true]];
+let periodoDias = 7, metricaProg = "kcal";
+function totaisDia(itens){
+  const tot = {}; MET_PROG.forEach(([k]) => tot[k] = 0);
+  for (const it of itens) for (const k in tot){ const v = num(it.n[k] ?? (k === "acucarAdic" ? it.n.acucar : null)); if (v != null) tot[k] += v * it.qtd / 100; }
+  return tot;
+}
+const dataCurta = iso => { const [y,m,d] = iso.split("-"); return `${d}/${m}`; };
+const gastoDiario = p => Math.round((10*p.peso + 6.25*p.altura - 5*p.idade + (p.sexo === "m" ? 5 : -161)) * Number(p.ativ));
+
+/* dados de exemplo para quem ainda não registrou nada (não são salvos) */
+function dadosExemplo(p, m){
+  const dias = {}, ps = [];
+  for (let i = 29; i >= 0; i--){
+    const d = hojeISO(-i);
+    if (i % 9 === 4) continue;
+    const f = 0.92 + 0.12*Math.sin(i*1.3) + 0.04*Math.cos(i*2.1);
+    const fp = 0.86 + 0.14*Math.sin(i*0.7+1);
+    dias[d] = {kcal:m.kcal*f, prot:m.prot*fp, carb:m.carb*f*1.02, gord:m.gord*f*0.97, fibra:m.fibra*(0.6+0.2*Math.sin(i)), acucarAdic:m.acucarAdic*(0.7+0.3*Math.cos(i)), gordSat:m.gordSat*0.9, sodio:m.sodio*(0.95+0.2*Math.sin(i*0.9))};
+  }
+  const base = p.peso + (p.obj === "massa" ? -1.4 : 1.8);
+  for (let i = 29; i >= 0; i -= 3) ps.push({d:hojeISO(-i), kg:Math.round((base + (p.obj === "massa" ? 1 : -1)*(29-i)/29*1.4 + 0.25*Math.sin(i)) * 10) / 10});
+  return {dias, ps};
+}
+
+function renderProgresso(){
+  const p = perfil(), m = metas(p);
+  const meusDias = diario[p.id] || {}, meusPesos = (pesos[p.id] || []).slice().sort((a,b) => a.d.localeCompare(b.d));
+  const temDados = Object.keys(meusDias).some(d => d >= hojeISO(-29) && meusDias[d].length) || meusPesos.length;
+  const ex = temDados ? null : dadosExemplo(p, m);
+  $("progExemplo").hidden = !!temDados;
+  $("progTitulo").textContent = `Progresso de ${p.nome}`;
+  $("periodo").innerHTML = [7,15,30].map(n => `<button type="button" class="chip" data-n="${n}" aria-pressed="${n===periodoDias}">${n} dias</button>`).join("");
+  $("periodo").querySelectorAll("button").forEach(b => b.onclick = () => { periodoDias = +b.dataset.n; renderProgresso(); });
+
+  // série diária do período
+  const serie = [];
+  for (let i = periodoDias - 1; i >= 0; i--){
+    const d = hojeISO(-i);
+    const t = ex ? ex.dias[d] || null : (meusDias[d] && meusDias[d].length ? totaisDia(meusDias[d]) : null);
+    serie.push({d, t});
+  }
+  const comDados = serie.filter(x => x.t);
+  const media = k => comDados.length ? comDados.reduce((s,x) => s + x.t[k], 0) / comDados.length : 0;
+  const naMetaProt = comDados.filter(x => x.t.prot >= m.prot * 0.9).length;
+  const kcalOk = comDados.filter(x => Math.abs(x.t.kcal - m.kcal) <= m.kcal * 0.1).length;
+  $("progTiles").innerHTML = `
+    <div class="tile"><b>${comDados.length}/${periodoDias}</b><span>dias registrados</span></div>
+    <div class="tile"><b>${comDados.length ? fmt(media("kcal")/m.kcal*100,0)+"%" : "–"}</b><span>das calorias da meta, em média</span></div>
+    <div class="tile"><b>${comDados.length ? naMetaProt : "–"}</b><span>dia${naMetaProt===1?"":"s"} com proteína na meta</span></div>`;
+  $("progBarras").innerHTML = comDados.length ? MET_PROG.map(([k,l,u,limite]) => {
+    const pct = m[k] ? media(k) / m[k] * 100 : 0;
+    const passou = limite ? pct > 100 : false;
+    return `<div class="barra${passou?" passou":""}${limite?" limite":""}"><div class="lab"><span>${l}</span><span>${fmt(pct,0)}% · ${fmt(media(k),0)} ${u}/dia</span></div><div class="trilho"><div class="enche" style="width:${Math.min(100,pct)}%"></div></div></div>`;
+  }).join("") + `<p class="small muted">${kcalOk} de ${comDados.length} dia${comDados.length===1?"":"s"} com calorias a até 10% da meta. Nas linhas marcadas "limite", passar de 100% é ruim.</p>`
+    : `<p class="none">Nenhuma refeição registrada nos últimos ${periodoDias} dias. Analise um produto ou uma refeição e toque em “Adicionar ao diário”.</p>`;
+
+  // gráfico diário
+  $("progMetrica").innerHTML = MET_PROG.map(([k,l]) => `<button type="button" class="chip" data-k="${k}" aria-pressed="${k===metricaProg}">${l}</button>`).join("");
+  $("progMetrica").querySelectorAll("button").forEach(b => b.onclick = () => { metricaProg = b.dataset.k; renderProgresso(); });
+  const [mk, ml, mu, mlim] = MET_PROG.find(x => x[0] === metricaProg);
+  graficoBarras($("graficoDia"), serie.map(x => ({d:x.d, v: x.t ? x.t[mk] : null})), m[mk], mu, ml, mlim);
+  $("tabelaDia").innerHTML = `<table class="tabdados"><thead><tr><th>Dia</th><th>${ml} (${mu})</th><th>% da meta</th></tr></thead><tbody>${
+    serie.slice().reverse().map(x => `<tr><td>${dataCurta(x.d)}</td><td>${x.t ? fmt(x.t[mk],0) : "–"}</td><td>${x.t && m[mk] ? fmt(x.t[mk]/m[mk]*100,0)+"%" : "–"}</td></tr>`).join("")}</tbody></table>`;
+
+  // peso
+  const listaPesos = ex ? ex.ps : meusPesos;
+  const inicio = hojeISO(-(periodoDias - 1));
+  const antes = listaPesos.filter(x => x.d < inicio);
+  const dentro = listaPesos.filter(x => x.d >= inicio);
+  const pIni = antes.length ? antes[antes.length-1] : dentro[0];
+  const pFim = dentro.length ? dentro[dentro.length-1] : null;
+  const dif = pIni && pFim && pIni !== pFim ? pFim.kg - pIni.kg : null;
+  const gasto = gastoDiario(p);
+  const esperado = comDados.length ? comDados.reduce((s,x) => s + (x.t.kcal - gasto), 0) / 7700 : null;
+  const sinal = v => (v > 0 ? "+" : "") + fmt(v,1);
+  const bomSentido = v => v == null || v === 0 ? "" : ((p.obj === "massa" ? v > 0 : v < 0) ? "down" : "up");
+  $("pesoTiles").innerHTML = `
+    <div class="tile"><b>${pIni ? fmt(pIni.kg,1) : "–"}</b><span>kg no início${pIni ? " ("+dataCurta(pIni.d)+")" : ""}</span></div>
+    <div class="tile"><b>${pFim ? fmt(pFim.kg,1) : "–"}</b><span>kg agora${pFim ? " ("+dataCurta(pFim.d)+")" : ""}</span></div>
+    <div class="tile"><b class="${bomSentido(dif)}">${dif != null ? sinal(dif) : "–"}</b><span>kg em ${periodoDias} dias</span></div>`;
+  $("pesoNota").innerHTML = (listaPesos.length ? "" : "Registre seu peso pelo menos uma vez por semana, sempre no mesmo horário, para comparar. ") +
+    (esperado != null ? `Pelas calorias registradas e um gasto estimado de ${fmt(gasto,0)} kcal/dia, a variação esperada seria de <b>${sinal(esperado)} kg</b>. A conta só vale se todos os dias foram registrados; diferenças de até 1 kg são normais por causa de água e intestino.` : "");
+  graficoLinha($("graficoPeso"), listaPesos.filter(x => x.d >= (antes.length ? antes[antes.length-1].d : inicio)), inicio);
+  $("tabelaPeso").innerHTML = listaPesos.length ? `<table class="tabdados"><thead><tr><th>Data</th><th>Peso (kg)</th><th></th></tr></thead><tbody>${
+    listaPesos.slice().reverse().map(x => `<tr><td>${dataCurta(x.d)}/${x.d.slice(0,4)}</td><td>${fmt(x.kg,1)}</td><td>${ex ? "" : `<button class="x" type="button" data-pd="${x.d}" aria-label="Apagar pesagem de ${dataCurta(x.d)}">×</button>`}</td></tr>`).join("")}</tbody></table>` : '<p class="none">Nenhuma pesagem.</p>';
+  $("tabelaPeso").querySelectorAll("button[data-pd]").forEach(b => b.onclick = () => { pesos[p.id] = (pesos[p.id]||[]).filter(x => x.d !== b.dataset.pd); salvar(); renderProgresso(); });
+  if (!$("pesoData").value) $("pesoData").value = hojeISO(0);
+  $("pesoData").max = hojeISO(0);
+}
+$("pesoForm").onsubmit = e => {
+  e.preventDefault();
+  const kg = num($("pesoKg").value), d = $("pesoData").value || hojeISO(0);
+  if (!kg || kg < 25 || kg > 300){ $("pesoKg").focus(); return; }
+  const p = perfil();
+  pesos[p.id] = [...(pesos[p.id] || []).filter(x => x.d !== d), {d, kg}].sort((a,b) => a.d.localeCompare(b.d));
+  const ultimo = pesos[p.id][pesos[p.id].length-1];
+  if (ultimo.d === d){ const i = perfis.findIndex(x => x.id === p.id); perfis[i] = {...perfis[i], peso:kg}; delete perfis[i].exemplo; }
+  $("pesoKg").value = ""; salvar(); preencherPerfil(); renderProgresso(); renderDiario();
+};
+
+/* ---------- gráficos (SVG feito à mão) ---------- */
+const SVGNS = "http://www.w3.org/2000/svg";
+function passoBonito(x){ const p = 10 ** Math.floor(Math.log10(x || 1)); const f = x / p; return (f <= 1 ? 1 : f <= 2 ? 2 : f <= 5 ? 5 : 10) * p; }
+function barraTopoRedondo(x, y, w, h, r){
+  r = Math.min(r, w/2, h);
+  return `M${x},${y+h}V${y+r}Q${x},${y} ${x+r},${y}H${x+w-r}Q${x+w},${y} ${x+w},${y+r}V${y+h}Z`;
+}
+function prepararTip(box){
+  let tip = box.querySelector(".tip");
+  if (!tip){ tip = document.createElement("div"); tip.className = "tip"; tip.hidden = true; box.append(tip); }
+  return tip;
+}
+function graficoBarras(box, dados, meta, un, rotulo, limite){
+  const W = 360, H = 200, mg = {l:40, r:10, t:14, b:24};
+  const pw = W - mg.l - mg.r, ph = H - mg.t - mg.b;
+  const vals = dados.map(d => d.v).filter(v => v != null);
+  const topo = Math.max(meta * 1.15, ...vals, 1);
+  const passo = passoBonito(topo / 4), yMax = Math.ceil(topo / passo) * passo;
+  const y = v => mg.t + ph - v / yMax * ph;
+  const slot = pw / dados.length, bw = Math.min(24, slot - 2);
+  const cadaX = dados.length <= 7 ? 1 : dados.length <= 15 ? 3 : 5;
+  let g = "";
+  for (let v = 0; v <= yMax + 1e-9; v += passo) g += `<line class="grade" x1="${mg.l}" x2="${W-mg.r}" y1="${y(v)}" y2="${y(v)}"/><text class="eixo" x="${mg.l-6}" y="${y(v)+3.5}" text-anchor="end">${fmt(v,0)}</text>`;
+  dados.forEach((d, i) => {
+    const cx = mg.l + slot*i + slot/2;
+    if (d.v != null && d.v > 0) g += `<path class="bar" data-i="${i}" d="${barraTopoRedondo(cx - bw/2, y(d.v), bw, mg.t + ph - y(d.v), 4)}"/>`;
+    if ((dados.length - 1 - i) % cadaX === 0) g += `<text class="eixo" x="${cx}" y="${H-6}" text-anchor="middle">${dataCurta(d.d)}</text>`;
+  });
+  g += `<line class="meta" x1="${mg.l}" x2="${W-mg.r}" y1="${y(meta)}" y2="${y(meta)}"/><text class="metatxt" x="${W-mg.r}" y="${y(meta)-5}" text-anchor="end">${limite ? "LIMITE" : "META"} ${fmt(meta,0)}</text>`;
+  if (!vals.length) g += `<text class="vazio" x="${mg.l + pw/2}" y="${mg.t + ph/2}" text-anchor="middle">Sem registros neste período</text>`;
+  dados.forEach((d, i) => g += `<rect data-hit="${i}" x="${mg.l + slot*i}" y="${mg.t}" width="${slot}" height="${ph}" fill="transparent"/>`);
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="${esc(rotulo)} por dia nos últimos ${dados.length} dias, com a ${limite?"linha do limite":"linha da meta"} em ${fmt(meta,0)} ${un}">${g}</svg>`;
+  const tip = prepararTip(box), svg = box.querySelector("svg");
+  const mostrar = i => {
+    const d = dados[i], r = svg.getBoundingClientRect(), k = r.width / W;
+    svg.querySelectorAll(".bar").forEach(b => b.classList.toggle("ativo", +b.dataset.i === i));
+    tip.innerHTML = `${dataCurta(d.d)}<br>${d.v == null ? "sem registro" : `<b>${fmt(d.v,0)} ${un}</b> · ${fmt(d.v/meta*100,0)}% ${limite?"do limite":"da meta"}`}`;
+    tip.style.left = Math.max(60, Math.min(r.width - 60, (mg.l + slot*i + slot/2) * k)) + "px";
+    tip.style.top = (d.v ? y(Math.min(d.v, yMax)) : mg.t + ph/2) * k + "px";
+    tip.hidden = false;
+  };
+  const esconder = () => { tip.hidden = true; svg.querySelectorAll(".bar").forEach(b => b.classList.remove("ativo")); };
+  svg.querySelectorAll("rect[data-hit]").forEach(h => { h.addEventListener("pointerenter", () => mostrar(+h.dataset.hit)); h.addEventListener("click", () => mostrar(+h.dataset.hit)); });
+  svg.addEventListener("pointerleave", esconder);
+}
+function graficoLinha(box, pts, inicio){
+  const W = 360, H = 190, mg = {l:40, r:14, t:14, b:24};
+  const pw = W - mg.l - mg.r, ph = H - mg.t - mg.b;
+  if (!pts.length){ box.innerHTML = `<svg viewBox="0 0 ${W} 70" role="img" aria-label="Sem pesagens"><text class="vazio" x="${W/2}" y="38" text-anchor="middle">Registre seu peso para ver o gráfico</text></svg>`; return; }
+  const t = iso => new Date(iso + "T12:00:00").getTime();
+  const x0 = Math.min(t(inicio), t(pts[0].d)), x1 = t(hojeISO(0));
+  const kgs = pts.map(p => p.kg);
+  let lo = Math.min(...kgs), hi = Math.max(...kgs);
+  if (hi - lo < 2){ const c = (hi + lo) / 2; lo = c - 1; hi = c + 1; }
+  const passo = passoBonito((hi - lo) / 4); lo = Math.floor(lo / passo) * passo; hi = Math.ceil(hi / passo) * passo;
+  const X = iso => mg.l + (x1 === x0 ? pw/2 : (t(iso) - x0) / (x1 - x0) * pw);
+  const Y = kg => mg.t + ph - (kg - lo) / (hi - lo) * ph;
+  let g = "";
+  for (let v = lo; v <= hi + 1e-9; v += passo) g += `<line class="grade" x1="${mg.l}" x2="${W-mg.r}" y1="${Y(v)}" y2="${Y(v)}"/><text class="eixo" x="${mg.l-6}" y="${Y(v)+3.5}" text-anchor="end">${fmt(v,1)}</text>`;
+  g += `<text class="eixo" x="${mg.l}" y="${H-6}" text-anchor="start">${dataCurta(new Date(x0).toLocaleDateString("sv-SE"))}</text><text class="eixo" x="${W-mg.r}" y="${H-6}" text-anchor="end">hoje</text>`;
+  g += `<line class="mira" id="mira" x1="0" x2="0" y1="${mg.t}" y2="${mg.t+ph}" visibility="hidden"/>`;
+  if (pts.length > 1) g += `<path class="linha" d="${pts.map((p,i) => (i ? "L" : "M") + X(p.d) + "," + Y(p.kg)).join("")}"/>`;
+  pts.forEach((p, i) => g += `<circle class="ponto" cx="${X(p.d)}" cy="${Y(p.kg)}" r="4" data-i="${i}"/>`);
+  const ult = pts[pts.length-1];
+  g += `<text class="metatxt" x="${Math.min(X(ult.d), W - mg.r)}" y="${Y(ult.kg) - 10}" text-anchor="end">${fmt(ult.kg,1)} kg</text>`;
+  g += `<rect id="hitPeso" x="${mg.l}" y="${mg.t}" width="${pw}" height="${ph}" fill="transparent"/>`;
+  box.innerHTML = `<svg viewBox="0 0 ${W} ${H}" role="img" aria-label="Peso de ${fmt(pts[0].kg,1)} kg em ${dataCurta(pts[0].d)} para ${fmt(ult.kg,1)} kg em ${dataCurta(ult.d)}">${g}</svg>`;
+  const tip = prepararTip(box), svg = box.querySelector("svg"), mira = svg.querySelector("#mira");
+  const mover = ev => {
+    const r = svg.getBoundingClientRect(), k = r.width / W, vx = (ev.clientX - r.left) / k;
+    let best = 0; pts.forEach((p, i) => { if (Math.abs(X(p.d) - vx) < Math.abs(X(pts[best].d) - vx)) best = i; });
+    const p = pts[best], ant = pts[best-1];
+    mira.setAttribute("x1", X(p.d)); mira.setAttribute("x2", X(p.d)); mira.setAttribute("visibility", "visible");
+    tip.innerHTML = `${dataCurta(p.d)}<br><b>${fmt(p.kg,1)} kg</b>${ant ? ` · ${(p.kg - ant.kg > 0 ? "+" : "") + fmt(p.kg - ant.kg,1)} kg` : ""}`;
+    tip.style.left = Math.max(55, Math.min(r.width - 55, X(p.d) * k)) + "px"; tip.style.top = Y(p.kg) * k + "px"; tip.hidden = false;
+  };
+  const hit = svg.querySelector("#hitPeso");
+  hit.addEventListener("pointermove", mover); hit.addEventListener("click", mover);
+  svg.addEventListener("pointerleave", () => { tip.hidden = true; mira.setAttribute("visibility", "hidden"); });
+}
 
 /* ---------- listas (compras e favoritos) ---------- */
 function renderListas(){
@@ -1494,13 +1736,13 @@ $("profileForm").addEventListener("submit", e => {
 $("perfilExcluir").onclick = () => { $("excluirConfirma").hidden = false; };
 $("excluirNao").onclick = () => { $("excluirConfirma").hidden = true; };
 $("excluirSim").onclick = () => {
-  perfis = perfis.filter(p => p.id !== editandoId); delete diario[editandoId];
+  perfis = perfis.filter(p => p.id !== editandoId); delete diario[editandoId]; delete pesos[editandoId];
   ativoId = perfis[0].id; editandoId = ativoId; salvar(); tudo();
 };
 $("perfilRapido").onchange = () => { ativoId = $("perfilRapido").value; editandoId = ativoId; salvar(); tudo(); };
 
 /* ---------- navegação ---------- */
-const VIEWS = ["analisar","diario","listas","perfil"];
+const VIEWS = ["analisar","diario","listas","progresso","perfil"];
 function rota(){
   const v = VIEWS.includes(location.hash.slice(1)) ? location.hash.slice(1) : "analisar";
   VIEWS.forEach(x => {
@@ -1509,10 +1751,11 @@ function rota(){
   });
   if (v === "diario") renderDiario();
   if (v === "listas") renderListas();
+  if (v === "progresso") renderProgresso();
 }
 window.addEventListener("hashchange", rota);
 
-function tudo(){ renderPerfisUI(); preencherPerfil(); renderResultado(); renderHist(); renderListas(); renderDiario(); }
+function tudo(){ renderPerfisUI(); preencherPerfil(); renderResultado(); renderHist(); renderListas(); renderDiario(); renderProgresso(); }
 tudo(); rota();
 })();
 </script>
