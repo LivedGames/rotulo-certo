@@ -420,11 +420,37 @@ details summary{cursor:pointer;font-weight:600}
       <details class="small muted"><summary>Como calculamos</summary>
         <p style="margin-top:8px">Gasto em repouso pela fórmula de Mifflin-St Jeor, multiplicado pelo nível de atividade. Emagrecer tira 20% das calorias, definir tira 10%, ganhar massa soma 10%. Proteína por quilo de peso conforme o objetivo; gordura em 25% das calorias; carboidrato completa o resto. Fibra de 14 g a cada 1.000 kcal. Sódio até 2.000 mg e açúcar adicionado até 10% das calorias, como recomenda a OMS.</p>
       </details>
-      <details class="small muted"><summary>Como funciona a nota</summary>
+      <details class="small muted" id="detNota"><summary>Como funciona a nota</summary>
         <p style="margin-top:8px">A nota parte de 5 e sobe com proteína, fibras e pouco açúcar ou sódio. Desce com excesso de açúcar adicionado, gordura saturada, sódio, gordura trans, aditivos de risco e ultraprocessamento. O peso de cada item muda conforme o objetivo do perfil. Produtos que batem com uma restrição ficam com nota máxima 2. Os selos "ALTO EM" seguem a Anvisa; o Nutri-Score e o grau de processamento (NOVA) vêm da base Open Food Facts quando disponíveis.</p>
       </details>
     </div>
-  </section>
+      <div class="card" id="dadosCard">
+      <h2>Seus dados</h2>
+      <p class="small muted">Tudo fica salvo só neste aparelho. Faça um backup para não perder o histórico se trocar de celular ou limpar o navegador.</p>
+      <div class="grid2">
+        <button class="btn primary" type="button" id="bkSalvar">Salvar backup</button>
+        <label class="btn" id="bkRestaurarBtn">Restaurar backup<input type="file" id="bkArquivo" accept=".json,application/json" style="position:absolute;width:1px;height:1px;opacity:0"></label>
+        <button class="btn" type="button" id="bkEnviar">Enviar backup</button>
+        <button class="btn" type="button" id="csvSalvar">Planilha do diário</button>
+      </div>
+      <div class="status err" id="bkConfirma" hidden></div>
+      <h3 style="margin-top:4px">Compartilhar com nutricionista ou personal</h3>
+      <div class="row">
+        <select id="relDias" aria-label="Período do relatório" style="flex:0 0 auto;width:auto"><option value="7">Últimos 7 dias</option><option value="15">Últimos 15 dias</option><option value="30" selected>Últimos 30 dias</option></select>
+        <button class="btn" type="button" id="relCompartilhar" style="flex:1 1 160px">Compartilhar relatório</button>
+      </div>
+      <div id="relBox" hidden style="display:flex;flex-direction:column;gap:8px">
+        <textarea id="relTexto" rows="10" readonly aria-label="Relatório para compartilhar" style="font-size:.82rem"></textarea>
+        <div class="row">
+          <button class="btn sm primary" type="button" id="relCopiar">Copiar texto</button>
+          <a class="btn sm" id="relWhats" target="_blank" rel="noopener">Abrir no WhatsApp</a>
+          <a class="btn sm" id="relEmail">Enviar por e-mail</a>
+        </div>
+      </div>
+      <div id="dadosStatus" class="status" hidden></div>
+      <p class="small muted">O backup e o relatório têm dados de saúde (peso, alimentação). Envie só para quem você confia.</p>
+    </div>
+</section>
 
   <p class="foot">Orientação geral, baseada no rótulo e em regras simples. Não substitui a avaliação de um nutricionista ou médico, principalmente em caso de doença, gravidez ou alergia grave. A classificação de aditivos é simplificada e se baseia em avaliações públicas da OMS/IARC e da EFSA.</p>
 </div>
@@ -1740,6 +1766,133 @@ $("excluirSim").onclick = () => {
   ativoId = perfis[0].id; editandoId = ativoId; salvar(); tudo();
 };
 $("perfilRapido").onchange = () => { ativoId = $("perfilRapido").value; editandoId = ativoId; salvar(); tudo(); };
+
+/* ---------- backup e compartilhamento ---------- */
+let downloads = null;
+(async () => { try{ if (window.claude && typeof window.claude.use === "function") downloads = await window.claude.use("downloads"); }catch(e){ downloads = null; } })();
+function avisoDados(msg, tipo){ const s = $("dadosStatus"); if (!msg){ s.hidden = true; return; } s.hidden = false; s.className = "status" + (tipo ? " " + tipo : ""); s.innerHTML = msg; }
+const hojeNome = () => hojeISO(0);
+async function baixarArquivo(nome, conteudo, mime){
+  if (downloads){
+    try{ await downloads.save({filename:nome, data:conteudo}); avisoDados(`Arquivo ${esc(nome)} salvo.`, "ok"); return true; }
+    catch(e){ if (e?.code === "declined"){ avisoDados("Download cancelado."); return false; } }
+  }
+  try{
+    const url = URL.createObjectURL(new Blob([conteudo], {type:mime}));
+    const a = document.createElement("a"); a.href = url; a.download = nome; document.body.append(a); a.click(); a.remove();
+    setTimeout(() => URL.revokeObjectURL(url), 4000);
+    avisoDados(`Arquivo ${esc(nome)} gerado. Procure na pasta Downloads do aparelho.`, "ok");
+    return true;
+  }catch(e){ avisoDados("Este navegador não deixou baixar o arquivo. Tente pelo botão “Enviar backup”.", "err"); return false; }
+}
+function montarBackup(){
+  return JSON.stringify({app:"rotulo-certo", versao:1, criadoEm:new Date().toISOString(),
+    dados:{perfis, ativo:ativoId, catalogo, hist:historico, fav:favs, compras, diario, pesos}}, null, 1);
+}
+$("bkSalvar").onclick = () => baixarArquivo(`rotulo-certo-backup-${hojeNome()}.json`, montarBackup(), "application/json");
+$("bkEnviar").onclick = async () => {
+  const nome = `rotulo-certo-backup-${hojeNome()}.json`;
+  const arq = new File([montarBackup()], nome, {type:"application/json"});
+  if (navigator.canShare && navigator.canShare({files:[arq]})){
+    try{ await navigator.share({files:[arq], title:"Backup do Rótulo Certo", text:"Backup dos meus dados do Rótulo Certo"}); avisoDados("Backup enviado.", "ok"); }
+    catch(e){ if (e?.name !== "AbortError") avisoDados("Não deu para abrir o compartilhamento. Use “Salvar backup” e envie o arquivo pelo app que preferir.", "err"); }
+  } else {
+    avisoDados("Este navegador não envia arquivos direto. O backup foi salvo; envie o arquivo pelo WhatsApp, e-mail ou Drive.", "");
+    await baixarArquivo(nome, montarBackup(), "application/json");
+  }
+};
+
+/* restaurar */
+let backupLido = null;
+$("bkArquivo").onchange = async e => {
+  const f = e.target.files[0]; e.target.value = "";
+  if (!f) return;
+  try{
+    const j = JSON.parse(await f.text());
+    if (j?.app !== "rotulo-certo" || !j.dados || !Array.isArray(j.dados.perfis) || !j.dados.perfis.length) throw new Error("formato");
+    backupLido = j.dados;
+    const dias = Object.values(j.dados.diario || {}).reduce((s, d) => s + Object.keys(d).length, 0);
+    const pes = Object.values(j.dados.pesos || {}).reduce((s, l) => s + l.length, 0);
+    const quando = j.criadoEm ? new Date(j.criadoEm).toLocaleDateString("pt-BR") : "data desconhecida";
+    $("bkConfirma").hidden = false;
+    $("bkConfirma").innerHTML = `<p style="margin-bottom:8px">Backup de ${esc(quando)}: ${j.dados.perfis.length} perfil(is), ${dias} dia(s) de diário e ${pes} pesagem(ns). Os dados atuais deste aparelho serão substituídos.</p>
+      <div class="row"><button class="btn sm danger" type="button" id="bkSim">Substituir pelos do backup</button><button class="btn sm" type="button" id="bkNao">Cancelar</button></div>`;
+    $("bkNao").onclick = () => { backupLido = null; $("bkConfirma").hidden = true; };
+    $("bkSim").onclick = () => {
+      const d = backupLido;
+      perfis = d.perfis; ativoId = perfis.some(p => p.id === d.ativo) ? d.ativo : perfis[0].id; editandoId = ativoId;
+      catalogo = d.catalogo || {}; historico = d.hist || []; favs = d.fav || []; compras = d.compras || []; diario = d.diario || {}; pesos = d.pesos || {};
+      salvar(); backupLido = null; $("bkConfirma").hidden = true; tudo();
+      avisoDados("Backup restaurado.", "ok");
+    };
+  }catch(err){ avisoDados("Esse arquivo não é um backup do Rótulo Certo. Escolha o arquivo rotulo-certo-backup-….json.", "err"); }
+};
+
+/* planilha do diário (CSV para Excel ou Google Planilhas) */
+$("csvSalvar").onclick = () => {
+  const dec = v => v == null ? "" : String(Math.round(v * 10) / 10).replace(".", ",");
+  const linhas = [["Data","Hora","Perfil","Alimento","Quantidade","Unidade","Calorias (kcal)","Proteína (g)","Carboidrato (g)","Gordura (g)","Gordura saturada (g)","Fibra (g)","Açúcar adicionado (g)","Sódio (mg)"]];
+  for (const p of perfis){
+    const dias = diario[p.id] || {};
+    for (const d of Object.keys(dias).sort()) for (const it of dias[d]){
+      const v = k => { const x = num(it.n[k] ?? (k === "acucarAdic" ? it.n.acucar : null)); return x == null ? null : x * it.qtd / 100; };
+      linhas.push([d.split("-").reverse().join("/"), it.hora, p.nome, it.nome, dec(it.qtd), it.liquido ? "ml" : "g",
+        dec(v("kcal")), dec(v("prot")), dec(v("carb")), dec(v("gord")), dec(v("gordSat")), dec(v("fibra")), dec(v("acucarAdic")), dec(v("sodio"))]);
+    }
+  }
+  const pesoLinhas = [["Data","Perfil","Peso (kg)"]];
+  for (const p of perfis) for (const x of (pesos[p.id] || [])) pesoLinhas.push([x.d.split("-").reverse().join("/"), p.nome, dec(x.kg)]);
+  if (linhas.length === 1 && pesoLinhas.length === 1){ avisoDados("Ainda não há refeições nem pesagens registradas.", "err"); return; }
+  const cel = c => /[;"\n]/.test(String(c)) ? `"${String(c).replace(/"/g, '""')}"` : String(c);
+  const csv = "﻿" + linhas.map(l => l.map(cel).join(";")).join("\r\n") + "\r\n\r\n" + pesoLinhas.map(l => l.map(cel).join(";")).join("\r\n") + "\r\n";
+  baixarArquivo(`rotulo-certo-diario-${hojeNome()}.csv`, csv, "text/csv");
+};
+
+/* relatório em texto */
+function gerarRelatorio(p, nDias){
+  const m = metas(p), dias = diario[p.id] || {};
+  const serie = []; for (let i = nDias - 1; i >= 0; i--){ const d = hojeISO(-i); if (dias[d] && dias[d].length) serie.push(totaisDia(dias[d])); }
+  const med = k => serie.length ? serie.reduce((s, t) => s + t[k], 0) / serie.length : 0;
+  const ini = hojeISO(-(nDias - 1));
+  const ps = (pesos[p.id] || []).slice().sort((a,b) => a.d.localeCompare(b.d));
+  const antes = ps.filter(x => x.d < ini), dentro = ps.filter(x => x.d >= ini);
+  const pI = antes.length ? antes[antes.length-1] : dentro[0], pF = dentro[dentro.length-1];
+  const L = [];
+  L.push(`RÓTULO CERTO · relatório de ${p.nome}`);
+  L.push(`Período: ${dataCurta(ini)} a ${dataCurta(hojeISO(0))} (${nDias} dias)`);
+  L.push(`Objetivo: ${OBJETIVOS[p.obj].label} · ${p.idade} anos · ${fmt(p.peso,1)} kg · ${p.altura} cm`);
+  if ((p.restr||[]).length) L.push(`Restrições: ${p.restr.map(r => RESTR[r]?.label).filter(Boolean).join(", ")}`);
+  L.push(`Meta diária: ${fmt(m.kcal,0)} kcal · ${m.prot} g proteína · ${m.carb} g carboidrato · ${m.gord} g gordura · ${m.fibra} g fibra`);
+  L.push("");
+  L.push(`Dias com registro: ${serie.length} de ${nDias}`);
+  if (serie.length){
+    L.push("Média por dia registrado:");
+    for (const [k,l,u,lim] of MET_PROG) L.push(`- ${l}: ${fmt(med(k),0)} ${u} (${fmt(m[k] ? med(k)/m[k]*100 : 0,0)}% ${lim ? "do limite" : "da meta"})`);
+  }
+  L.push("");
+  if (pI && pF && pI !== pF) L.push(`Peso: ${fmt(pI.kg,1)} kg (${dataCurta(pI.d)}) → ${fmt(pF.kg,1)} kg (${dataCurta(pF.d)}) = ${(pF.kg - pI.kg > 0 ? "+" : "") + fmt(pF.kg - pI.kg,1)} kg`);
+  else if (pF || pI) L.push(`Peso: ${fmt((pF||pI).kg,1)} kg em ${dataCurta((pF||pI).d)} (só uma pesagem no período)`);
+  else L.push("Peso: nenhuma pesagem no período");
+  const freq = {};
+  for (let i = 0; i < nDias; i++) for (const it of (dias[hojeISO(-i)] || [])) freq[it.nome] = (freq[it.nome] || 0) + 1;
+  const top = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,5);
+  if (top.length){ L.push(""); L.push("Alimentos mais registrados:"); top.forEach(([n,c]) => L.push(`- ${n} (${c}x)`)); }
+  L.push(""); L.push(`Gerado em ${new Date().toLocaleDateString("pt-BR")} pelo app Rótulo Certo. Orientação geral; não substitui avaliação profissional.`);
+  return L.join("\n");
+}
+$("relCompartilhar").onclick = async () => {
+  const texto = gerarRelatorio(perfil(), +$("relDias").value);
+  $("relTexto").value = texto; $("relBox").hidden = false;
+  $("relWhats").href = "https://wa.me/?text=" + encodeURIComponent(texto);
+  $("relEmail").href = "mailto:?subject=" + encodeURIComponent(`Relatório Rótulo Certo · ${perfil().nome}`) + "&body=" + encodeURIComponent(texto);
+  if (navigator.share){
+    try{ await navigator.share({title:"Relatório Rótulo Certo", text:texto}); return; }catch(e){ /* cancelado ou bloqueado: fica o texto na tela */ }
+  }
+};
+$("relCopiar").onclick = async () => {
+  try{ await navigator.clipboard.writeText($("relTexto").value); avisoDados("Relatório copiado. Cole no WhatsApp, e-mail ou onde quiser.", "ok"); }
+  catch(e){ $("relTexto").focus(); $("relTexto").select(); avisoDados("Texto selecionado. Use Copiar do seu aparelho.", ""); }
+};
 
 /* ---------- navegação ---------- */
 const VIEWS = ["analisar","diario","listas","progresso","perfil"];
