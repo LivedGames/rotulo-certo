@@ -513,8 +513,22 @@ details summary{cursor:pointer;font-weight:600}
       </div>
     </form>
     <div class="card">
-      <h2>Meta diária</h2>
+      <div class="row" style="justify-content:space-between">
+        <h2>Meta diária</h2>
+        <button class="btn sm" type="button" id="metasEditar">Personalizar metas</button>
+      </div>
+      <p class="small muted" id="metasNota"></p>
       <div class="targets" id="targets"></div>
+      <form id="metasForm" hidden autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
+        <p class="small muted">Troque só o que quiser, por exemplo os valores que o seu nutricionista passou. Campo vazio usa o cálculo automático, mostrado em cinza, que se ajusta às calorias que você escolher.</p>
+        <div class="grid2" id="metasCampos"></div>
+        <p class="status" id="metasAviso" hidden></p>
+        <div class="row">
+          <button class="btn primary" type="submit">Salvar metas</button>
+          <button class="btn" type="button" id="metasCancelar">Cancelar</button>
+          <button class="btn ghost" type="button" id="metasAuto">Voltar ao cálculo automático</button>
+        </div>
+      </form>
       <details class="small muted"><summary>Como calculamos</summary>
         <p style="margin-top:8px">Gasto em repouso pela fórmula de Mifflin-St Jeor, multiplicado pelo nível de atividade. Emagrecer tira 20% das calorias, definir tira 10%, ganhar massa soma 10%. Proteína por quilo de peso conforme o objetivo; gordura em 25% das calorias; carboidrato completa o resto. Fibra de 14 g a cada 1.000 kcal. Sódio até 2.000 mg e açúcar adicionado até 10% das calorias, como recomenda a OMS.</p>
       </details>
@@ -938,7 +952,19 @@ const salvar = () => {
 const produtoDe = k => catalogo[k] || EXEMPLOS.find(e => chave(e) === k) || null;
 
 /* ---------- metas ---------- */
+/* metas do perfil: o que a pessoa definiu vale; o resto se ajusta às calorias escolhidas */
 function metas(p){
+  const c = metasCalculadas(p), pers = p.metasPers || {};
+  const v = k => num(pers[k]) > 0 ? num(pers[k]) : null;
+  const kcal = v("kcal") ?? c.kcal;
+  const prot = v("prot") ?? c.prot;
+  const gord = v("gord") ?? Math.round(kcal * 0.25 / 9);
+  const carb = v("carb") ?? Math.max(0, Math.round((kcal - prot*4 - gord*9) / 4));
+  return {kcal, prot, carb, gord,
+    fibra: v("fibra") ?? Math.round(kcal/1000*14), sodio: v("sodio") ?? 2000,
+    acucarAdic: v("acucarAdic") ?? Math.round(kcal*0.10/4), gordSat: v("gordSat") ?? Math.round(kcal*0.10/9)};
+}
+function metasCalculadas(p){
   const tmb = 10*p.peso + 6.25*p.altura - 5*p.idade + (p.sexo === "m" ? 5 : -161);
   const o = OBJETIVOS[p.obj] || OBJETIVOS.manter;
   const kcal = Math.round(tmb * Number(p.ativ) * o.kcal / 10) * 10;
@@ -2014,12 +2040,53 @@ function lerForm(){
   return {sexo:$("p-sexo").value, idade:num($("p-idade").value)||30, peso:num($("p-peso").value)||70,
     altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel};
 }
+const CAMPOS_META = [["kcal","Calorias","kcal"],["prot","Proteína","g"],["carb","Carboidrato","g"],["gord","Gordura","g"],
+  ["fibra","Fibra (mínimo)","g"],["sodio","Sódio (máximo)","mg"],["acucarAdic","Açúcar adicionado (máximo)","g"],["gordSat","Gordura saturada (máximo)","g"]];
 function renderMetas(p){
-  const m = metas(p);
+  const m = metas(p), pers = p.metasPers || {};
   const it = [["kcal","Calorias","kcal"],["prot","Proteína","g"],["carb","Carboidrato","g"],["gord","Gordura","g"],["fibra","Fibra (mín.)","g"],["sodio","Sódio (máx.)","mg"]];
-  $("targets").innerHTML = it.map(([k,l,u]) => `<div><b>${fmt(m[k],0)}</b><span>${u} · ${l}</span></div>`).join("");
+  $("targets").innerHTML = it.map(([k,l,u]) => `<div${num(pers[k]) > 0 ? ' style="outline:2px solid var(--accent);outline-offset:-2px"' : ""}><b>${fmt(m[k],0)}</b><span>${u} · ${l}${num(pers[k]) > 0 ? " · sua meta" : ""}</span></div>`).join("");
+  const n = Object.keys(pers).filter(k => num(pers[k]) > 0).length;
+  $("metasNota").textContent = n ? `${n} meta${n > 1 ? "s" : ""} personalizada${n > 1 ? "s" : ""} (contorno verde). As demais são calculadas pelo perfil.` : "Calculadas automaticamente pelo perfil. Toque em “Personalizar metas” para usar outros valores.";
 }
-const previewMetas = () => renderMetas(lerForm());
+const perfilEditando = () => perfis.find(x => x.id === editandoId) || perfil();
+const previewMetas = () => renderMetas({...perfilEditando(), ...lerForm()});
+function abrirMetas(){
+  const p = {...perfilEditando(), ...lerForm()}, calc = metasCalculadas(p), pers = p.metasPers || {};
+  $("metasCampos").innerHTML = CAMPOS_META.map(([k,l,u]) => `<label class="field"><span>${l} (${u})</span><input type="number" min="0" step="any" id="mt-${k}" value="${num(pers[k]) > 0 ? pers[k] : ""}" placeholder="${fmt(calc[k],0)}"></label>`).join("");
+  CAMPOS_META.forEach(([k]) => $("mt-" + k).addEventListener("input", conferirMetas));
+  $("metasForm").hidden = false; $("metasEditar").hidden = true; conferirMetas();
+  $("mt-kcal").focus();
+}
+function lerMetas(){
+  const o = {}; for (const [k] of CAMPOS_META){ const v = num($("mt-" + k).value); if (v > 0) o[k] = v; } return o;
+}
+/* avisa quando proteína, carboidrato e gordura não fecham com as calorias */
+function conferirMetas(){
+  const p = {...perfilEditando(), ...lerForm(), metasPers: lerMetas()}, m = metas(p);
+  for (const [k] of CAMPOS_META) $("mt-" + k).placeholder = fmt(m[k], 0);
+  const soma = m.prot*4 + m.carb*4 + m.gord*9, dif = soma - m.kcal;
+  const av = $("metasAviso");
+  if (Math.abs(dif) > m.kcal * 0.1){
+    av.hidden = false; av.className = "status";
+    av.textContent = `Proteína, carboidrato e gordura somam ${fmt(soma,0)} kcal, ${dif > 0 ? "acima" : "abaixo"} da meta de ${fmt(m.kcal,0)} kcal. Dá para salvar assim, mas confira os números.`;
+  } else av.hidden = true;
+}
+$("metasEditar").onclick = abrirMetas;
+$("metasCancelar").onclick = () => { $("metasForm").hidden = true; $("metasEditar").hidden = false; };
+$("metasForm").onsubmit = e => {
+  e.preventDefault();
+  const i = perfis.findIndex(x => x.id === editandoId);
+  const pers = lerMetas();
+  perfis[i] = {...perfis[i], metasPers: Object.keys(pers).length ? pers : undefined};
+  if (!perfis[i].metasPers) delete perfis[i].metasPers;
+  salvar(); $("metasForm").hidden = true; $("metasEditar").hidden = false; tudo();
+};
+$("metasAuto").onclick = () => {
+  const i = perfis.findIndex(x => x.id === editandoId);
+  const {metasPers, ...resto} = perfis[i]; perfis[i] = resto;
+  salvar(); $("metasForm").hidden = true; $("metasEditar").hidden = false; tudo();
+};
 function preencherPerfil(){
   const p = perfis.find(x => x.id === editandoId) || perfil();
   editandoId = p.id;
@@ -2031,6 +2098,7 @@ function preencherPerfil(){
   $("perfilExcluir").hidden = perfis.length < 2;
   $("excluirConfirma").hidden = true;
   renderPerfilChips(); renderMetas(p);
+  $("metasForm").hidden = true; $("metasEditar").hidden = false;
 }
 ["p-sexo","p-idade","p-peso","p-altura","p-ativ"].forEach(id => $(id).addEventListener("input", previewMetas));
 $("p-outraAdd").onclick = adicionarOutraAlergia;
@@ -2039,7 +2107,8 @@ $("profileForm").addEventListener("submit", e => {
   e.preventDefault();
   const i = perfis.findIndex(x => x.id === editandoId);
   const nome = $("p-nome").value.trim() || "Sem nome";
-  perfis[i] = {id:editandoId, nome, ...lerForm()};
+  const {exemplo, ...anterior} = perfis[i];
+  perfis[i] = {...anterior, id:editandoId, nome, ...lerForm()};
   ativoId = editandoId; salvar(); tudo();
   location.hash = "analisar";
 });
@@ -2148,6 +2217,7 @@ function gerarRelatorio(p, nDias){
   if ((p.restr||[]).length) L.push(`Restrições: ${p.restr.map(r => RESTR[r]?.label).filter(Boolean).join(", ")}`);
   const todasAlerg = [...(p.alergias||[]).map(a => ALERGIAS[a]?.label).filter(Boolean), ...(p.alergiasOutras||[])];
   if (todasAlerg.length) L.push(`Alergias: ${todasAlerg.join(", ")}`);
+  if (p.metasPers && Object.keys(p.metasPers).length) L.push("Metas personalizadas pelo usuário (ex.: orientação do nutricionista).");
   L.push(`Meta diária: ${fmt(m.kcal,0)} kcal · ${m.prot} g proteína · ${m.carb} g carboidrato · ${m.gord} g gordura · ${m.fibra} g fibra`);
   L.push("");
   L.push(`Dias com registro: ${serie.length} de ${nDias}`);
