@@ -359,6 +359,7 @@ details summary{cursor:pointer;font-weight:600}
         <button class="btn sm" type="button" id="diaProx" aria-label="Próximo dia">›</button>
       </div>
       <div class="barras" id="barras"></div>
+      <p class="small" id="diaUltra" hidden></p>
     </div>
     <div class="card">
       <h3>O que você comeu</h3>
@@ -393,6 +394,7 @@ details summary{cursor:pointer;font-weight:600}
       <div class="tiles" id="progTiles"></div>
       <h3>Média por dia registrado · % da meta</h3>
       <div class="barras" id="progBarras"></div>
+      <p class="small" id="progUltra" hidden></p>
     </div>
     <div class="card">
       <h2>Evolução dia a dia</h2>
@@ -408,6 +410,7 @@ details summary{cursor:pointer;font-weight:600}
         <button class="btn primary" type="submit">Registrar</button>
       </form>
       <div class="tiles" id="pesoTiles"></div>
+      <div id="pesoMeta" style="display:flex;flex-direction:column;gap:8px"></div>
       <div class="chart" id="graficoPeso"></div>
       <p class="small muted" id="pesoNota"></p>
       <div class="status" id="calibra" style="background:var(--bg);display:flex;flex-direction:column;gap:8px"></div>
@@ -517,6 +520,14 @@ details summary{cursor:pointer;font-weight:600}
       </div>
       <p class="small muted" id="metabNota">Biotipo ajusta as calorias em só 5%, porque ele não define o metabolismo com segurança. Se você sabe que seu metabolismo é diferente, use o campo Metabolismo (ajuste de 10%). O mais preciso é o ajuste pelos seus dados, na aba Progresso.</p>
       <div><h3 style="margin-bottom:8px">Objetivo</h3><div class="chips" id="p-obj"></div></div>
+      <label class="field"><span>Estilo de dieta</span>
+        <select id="p-estilo">
+          <option value="equilibrada">Equilibrada (padrão)</option>
+          <option value="mediterranea">Mediterrânea</option>
+          <option value="lowcarb">Low-carb (pouco carboidrato)</option>
+          <option value="lowfat">Low-fat (pouca gordura)</option>
+        </select></label>
+      <p class="small muted" id="estiloNota"></p>
       <div><h3 style="margin-bottom:8px">Restrições alimentares</h3><div class="chips" id="p-restr"></div></div>
       <div><h3 style="margin-bottom:4px">Alergias</h3><p class="small muted" style="margin-bottom:8px">Produto que contém o alérgeno fica com nota 0; “pode conter traços” fica com nota máxima 3.</p><div class="chips" id="p-alerg"></div>
         <div class="row" style="margin-top:10px"><input type="text" id="p-outraAlerg" maxlength="40" placeholder="Outra alergia (ex.: morango, kiwi, mostarda)" aria-label="Outra alergia" style="flex:1 1 180px"><button class="btn sm" type="button" id="p-outraAdd">Adicionar</button></div>
@@ -548,7 +559,7 @@ details summary{cursor:pointer;font-weight:600}
         </div>
       </form>
       <details class="small muted"><summary>Como calculamos</summary>
-        <p style="margin-top:8px">Gasto em repouso pela fórmula de Mifflin-St Jeor, multiplicado pelo nível de atividade. Emagrecer tira 20% das calorias, definir tira 10%, ganhar massa soma 10%. Proteína por quilo de peso conforme o objetivo; gordura em 25% das calorias; carboidrato completa o resto. Fibra de 14 g a cada 1.000 kcal. Sódio até 2.000 mg e açúcar adicionado até 10% das calorias, como recomenda a OMS.</p>
+        <p style="margin-top:8px">Gasto em repouso pela fórmula de Mifflin-St Jeor, multiplicado pelo nível de atividade. Emagrecer tira 20% das calorias, definir tira 10%, ganhar massa soma 10%. Para emagrecer ou definir, as calorias nunca ficam abaixo de 1.200 kcal (mulheres) ou 1.500 kcal (homens), nem mais de 1.000 kcal abaixo do seu gasto. Proteína por quilo de peso conforme o objetivo. Gordura e carboidrato seguem o estilo de dieta: equilibrada 25% de gordura, mediterrânea 30%, low-fat 20%, low-carb 20% de carboidrato (máx. 130 g). Fibra de 14 g a cada 1.000 kcal. Sódio até 2.000 mg e açúcar adicionado até 10% das calorias, como recomenda a OMS.</p>
       </details>
       <details class="small muted" id="detNota"><summary>Como funciona a nota</summary>
         <p style="margin-top:8px">A nota parte de 5 e sobe com proteína, fibras e pouco açúcar ou sódio. Desce com excesso de açúcar adicionado, gordura saturada, sódio, gordura trans, aditivos de risco e ultraprocessamento. O peso de cada item muda conforme o objetivo do perfil. Produtos que batem com uma restrição ficam com nota máxima 2. Os selos "ALTO EM" seguem a Anvisa; o Nutri-Score e o grau de processamento (NOVA) vêm da base Open Food Facts quando disponíveis.</p>
@@ -606,6 +617,24 @@ const OBJETIVOS = {
   definir:  {label:"Definir",      kcal:0.90, protKg:2.2, wProt:1.3, wAc:1.1, para:"definição"},
   manter:   {label:"Manter",       kcal:1.00, protKg:1.6, wProt:1.0, wAc:1.0, para:"manter o peso"}
 };
+const ESTILOS = {
+  equilibrada: {label:"Equilibrada", desc:"Gordura em 25% das calorias e carboidrato completando o resto. É a divisão mais usada nas recomendações gerais."},
+  mediterranea:{label:"Mediterrânea", desc:"Gordura em 30% das calorias, de preferência azeite, castanhas e peixes; carboidrato de grãos, frutas e legumes. Boa opção para quem tem diabetes ou risco cardiovascular."},
+  lowcarb:     {label:"Low-carb", desc:"Carboidrato em 20% das calorias (no máximo 130 g por dia); a gordura completa o resto. Costuma ajudar triglicerídeos e HDL e dá perda mais rápida no começo."},
+  lowfat:      {label:"Low-fat", desc:"Gordura em 20% das calorias e carboidrato completando o resto. Permite volume maior de comida com menos calorias."}
+};
+/* gordura e carboidrato conforme o estilo; um valor fixado pelo usuário vale e o outro completa as calorias */
+function dividirMacros(kcal, prot, estilo, gordFix, carbFix){
+  const resto = (outro, kcalOutro, div) => Math.max(0, Math.round((kcal - prot*4 - outro*kcalOutro) / div));
+  if (gordFix != null && carbFix != null) return {gord:gordFix, carb:carbFix};
+  if (gordFix != null) return {gord:gordFix, carb:resto(gordFix, 9, 4)};
+  if (carbFix != null) return {carb:carbFix, gord:resto(carbFix, 4, 9)};
+  if (estilo === "lowcarb"){ const carb = Math.round(Math.min(130, kcal*0.20/4)); return {carb, gord:resto(carb, 4, 9)}; }
+  const gord = Math.round(kcal * (estilo === "mediterranea" ? 0.30 : estilo === "lowfat" ? 0.20 : 0.25) / 9);
+  return {gord, carb:resto(gord, 9, 4)};
+}
+/* piso de calorias em dietas para perder peso */
+const pisoKcal = p => p.sexo === "f" ? 1200 : 1500;
 const RESTR = {
   lactose:{label:"Sem lactose", aviso:"Contém leite ou derivados", tag:"lactose"},
   gluten: {label:"Sem glúten",  aviso:"Contém glúten", tag:"gluten"},
@@ -931,7 +960,7 @@ function montarRefeicao(nome, itens){
   const kcalTot = itens.reduce((s, i) => s + kcalDe(i), 0) || 1;
   const parte4 = itens.filter(i => (i.nova || 1) === 4).reduce((s, i) => s + kcalDe(i), 0) / kcalTot;
   const nova = parte4 >= 0.5 ? 4 : parte4 > 0 ? 3 : Math.max(...itens.map(i => i.nova || 1));
-  return {nome, refeicao:true, itens, liquido:itens.every(i => i.l), porcao:Math.round(total), n, tags, tracos, alergInfo, nova, ultra: nova === 4,
+  return {nome, refeicao:true, itens, liquido:itens.every(i => i.l), porcao:Math.round(total), n, tags, tracos, alergInfo, nova, ultra: nova === 4, parte4,
     aditivos: itens.every(i => (i.nova || 1) <= 2) ? [] : null};
 }
 
@@ -976,11 +1005,18 @@ function metas(p){
   const v = k => num(pers[k]) > 0 ? num(pers[k]) : null;
   const kcal = v("kcal") ?? c.kcal;
   const prot = v("prot") ?? c.prot;
-  const gord = v("gord") ?? Math.round(kcal * 0.25 / 9);
-  const carb = v("carb") ?? Math.max(0, Math.round((kcal - prot*4 - gord*9) / 4));
+  const {gord, carb} = dividirMacros(kcal, prot, p.estilo, v("gord"), v("carb"));
   return {kcal, prot, carb, gord,
     fibra: v("fibra") ?? Math.round(kcal/1000*14), sodio: v("sodio") ?? 2000,
-    acucarAdic: v("acucarAdic") ?? Math.round(kcal*0.10/4), gordSat: v("gordSat") ?? Math.round(kcal*0.10/9)};
+    acucarAdic: v("acucarAdic") ?? Math.round(kcal*0.10/4), gordSat: v("gordSat") ?? Math.round(kcal*0.10/9),
+    ajuste: v("kcal") ? null : c.ajuste, alertaKcal: v("kcal") ? alertaCalorias(p, kcal) : null};
+}
+/* aviso para metas de calorias digitadas pelo usuário */
+function alertaCalorias(p, kcal){
+  const piso = pisoKcal(p), gasto = gastoBase(p);
+  if (kcal < piso) return `${fmt(kcal,0)} kcal fica abaixo do mínimo geralmente recomendado sem acompanhamento (${fmt(piso,0)} kcal para ${p.sexo === "f" ? "mulheres" : "homens"}). Use só com orientação de nutricionista ou médico.`;
+  if (gasto - kcal > 1000) return `${fmt(kcal,0)} kcal é mais de 1.000 kcal abaixo do seu gasto estimado (${fmt(gasto,0)} kcal). Déficits grandes aumentam a perda de músculo e o reganho; o comum é 500 a 1.000 kcal.`;
+  return null;
 }
 /* fator de metabolismo: o campo Metabolismo vale mais que o biotipo */
 function fatorMetab(p){
@@ -1000,11 +1036,21 @@ function gastoBase(p){
 function gastoFormula(p){ return gastoBase({...p, gastoReal:null}); }
 function metasCalculadas(p){
   const o = OBJETIVOS[p.obj] || OBJETIVOS.manter;
-  const kcal = Math.round(gastoBase(p) * o.kcal / 10) * 10;
+  const gasto = gastoBase(p);
+  let kcal = Math.round(gasto * o.kcal / 10) * 10, ajuste = null;
+  if (o.kcal < 1){
+    const piso = pisoKcal(p), minimo = Math.min(Math.max(piso, gasto - 1000), gasto);
+    if (kcal < minimo){
+      kcal = Math.ceil(minimo / 10) * 10;
+      ajuste = gasto <= piso
+        ? `Seu gasto estimado (${fmt(gasto,0)} kcal) já está perto do mínimo recomendado, então a meta não tira calorias. Para perder peso nesse caso, o ideal é aumentar a atividade física e ter acompanhamento profissional.`
+        : minimo === piso ? `Calorias mantidas em ${fmt(piso,0)} kcal, o mínimo recomendado para ${p.sexo === "f" ? "mulheres" : "homens"} sem acompanhamento.`
+        : "Déficit limitado a 1.000 kcal por dia, para preservar músculo e facilitar a manutenção.";
+    }
+  }
   const prot = Math.round(p.peso * o.protKg);
-  const gord = Math.round(kcal * 0.25 / 9);
-  const carb = Math.max(0, Math.round((kcal - prot*4 - gord*9) / 4));
-  return {kcal, prot, carb, gord, fibra: Math.round(kcal/1000*14), sodio:2000, acucarAdic: Math.round(kcal*0.10/4), gordSat: Math.round(kcal*0.10/9)};
+  const {gord, carb} = dividirMacros(kcal, prot, p.estilo, null, null);
+  return {kcal, prot, carb, gord, fibra: Math.round(kcal/1000*14), sodio:2000, acucarAdic: Math.round(kcal*0.10/4), gordSat: Math.round(kcal*0.10/9), ajuste};
 }
 
 /* ---------- avaliação ---------- */
@@ -1030,6 +1076,16 @@ function avaliar(prod, p){
     else if (dens >= 6){ const w=1.5*o.wProt; s+=w; add(pos,w,"Boa proteína: "+txt); }
     else if (dens >= 3){ const w=0.5*o.wProt; s+=w; add(pos,w,"Alguma proteína: "+txt); }
     else if (kcal > 150 && (p.obj === "massa" || p.obj === "definir")){ s-=0.7; add(neg,0.7,`Pouca proteína para as calorias (${fmt(prot)} g em ${un})`); }
+  }
+  const estilo = p.estilo || "equilibrada";
+  if (fator && estilo === "lowcarb" && num(n.carb) != null && m.carb){
+    const c = num(n.carb) * fator, pc = c / m.carb * 100;
+    if (pc >= 30){ s-=1; add(neg,1,`${fmt(c,0)} g de carboidrato por porção (${fmt(pc,0)}% da sua meta low-carb)`); }
+    else if (pc <= 5 && kcal > 40){ s+=0.4; add(pos,0.4,`Pouco carboidrato por porção (${fmt(c,0)} g), combina com low-carb`); }
+  }
+  if (fator && estilo === "lowfat" && num(n.gord) != null && m.gord){
+    const g = num(n.gord) * fator, pg = g / m.gord * 100;
+    if (pg >= 30){ s-=1; add(neg,1,`${fmt(g,0)} g de gordura por porção (${fmt(pg,0)}% da sua meta low-fat)`); }
   }
   const fib = num(n.fibra);
   if (fib != null){
@@ -1420,7 +1476,9 @@ function adicionarDiario(prod, qtd){
   const p = perfil(), dia = hojeISO(0);
   diario[p.id] = diario[p.id] || {};
   diario[p.id][dia] = diario[p.id][dia] || [];
-  diario[p.id][dia].push({id:uid(), nome:prod.nome, qtd, liquido:!!prod.liquido, n:{...prod.n}, hora:new Date().toTimeString().slice(0,5)});
+  const nova = prod.nova || (prod.ultra ? 4 : null);
+  diario[p.id][dia].push({id:uid(), nome:prod.nome, qtd, liquido:!!prod.liquido, n:{...prod.n}, hora:new Date().toTimeString().slice(0,5),
+    ...(nova ? {nova} : {}), ...(prod.refeicao && prod.parte4 != null ? {p4:Math.round(prod.parte4*100)/100} : {})});
   salvar(); diaOff = 0; renderDiario();
   setStatus(`${esc(prod.nome)} adicionado ao diário de hoje de ${esc(p.nome)}. <a href="#diario">Ver diário</a>`, "ok");
   $("status").scrollIntoView({block:"nearest"});
@@ -1441,6 +1499,7 @@ function renderDiario(){
     const passou = limite ? pct > 100 : pct > 115 && (k === "kcal" || k === "gord" || k === "carb");
     return `<div class="barra${passou?" passou":""}${limite?" limite":""}"><div class="lab"><span>${l}</span><span>${fmt(tot[k],0)} / ${fmt(m[k],0)} ${u}</span></div><div class="trilho"><div class="enche" style="width:${Math.min(100,pct)}%"></div></div></div>`;
   }).join("");
+  mostrarUltra($("diaUltra"), [itens], "do dia");
   $("diaLista").innerHTML = itens.length ? itens.map(it => {
     const kcal = num(it.n.kcal);
     return `<div class="item"><span class="small muted" style="text-align:center">${esc(it.hora)}</span><span class="nm">${esc(it.nome)} <span class="muted small">· ${fmt(it.qtd,0)} ${it.liquido?"ml":"g"}${kcal!=null?` · ${fmt(kcal*it.qtd/100,0)} kcal`:""}</span></span><button class="x" type="button" data-id="${it.id}" aria-label="Remover ${esc(it.nome)}">×</button></div>`;
@@ -1448,6 +1507,25 @@ function renderDiario(){
   $("diaLista").querySelectorAll("button[data-id]").forEach(b => b.onclick = () => {
     diario[p.id][dia] = diario[p.id][dia].filter(x => x.id !== b.dataset.id); salvar(); renderDiario();
   });
+}
+/* parte das calorias que veio de ultraprocessados (itens sem essa informação ficam de fora) */
+function ultraDe(listas){
+  let tot = 0, ultra = 0, sem = 0;
+  for (const itens of listas) for (const it of itens){
+    const k = (num(it.n.kcal) || 0) * it.qtd / 100; if (!k) continue;
+    const f = it.p4 != null ? it.p4 : it.nova === 4 ? 1 : it.nova ? 0 : null;
+    if (f == null){ sem += k; continue; }
+    tot += k; ultra += k * f;
+  }
+  return {pct: tot ? ultra / tot * 100 : null, sem, tot};
+}
+function mostrarUltra(el, listas, quando){
+  const u = ultraDe(listas);
+  if (u.pct == null){ el.hidden = true; return; }
+  const cor = u.pct <= 20 ? "var(--good)" : u.pct <= 40 ? "var(--mid)" : "var(--bad)";
+  const leitura = u.pct <= 20 ? "ótimo" : u.pct <= 40 ? "dá para melhorar" : "alto";
+  el.hidden = false;
+  el.innerHTML = `<b style="color:${cor}">${fmt(u.pct,0)}% das calorias ${quando} vieram de ultraprocessados</b> (${leitura}). A diretriz brasileira de obesidade recomenda priorizar alimentos in natura e minimamente processados.${u.sem > 50 ? ` <span class="muted">${fmt(u.sem,0)} kcal sem informação de processamento ficaram fora da conta.</span>` : ""}`;
 }
 $("diaAnt").onclick = () => { diaOff--; renderDiario(); };
 $("diaProx").onclick = () => { if (diaOff < 0){ diaOff++; renderDiario(); } };
@@ -1511,6 +1589,9 @@ function renderProgresso(){
   }).join("") + `<p class="small muted">${kcalOk} de ${comDados.length} dia${comDados.length===1?"":"s"} com calorias a até 10% da meta. Nas linhas marcadas "limite", passar de 100% é ruim.</p>`
     : `<p class="none">Nenhuma refeição registrada nos últimos ${periodoDias} dias. Analise um produto ou uma refeição e toque em “Adicionar ao diário”.</p>`;
 
+  if (ex) $("progUltra").hidden = true;
+  else mostrarUltra($("progUltra"), serie.filter(x => x.t).map(x => meusDias[x.d]), `destes ${periodoDias} dias`);
+
   // gráfico diário
   $("progMetrica").innerHTML = MET_PROG.map(([k,l]) => `<button type="button" class="chip" data-k="${k}" aria-pressed="${k===metricaProg}">${l}</button>`).join("");
   $("progMetrica").querySelectorAll("button").forEach(b => b.onclick = () => { metricaProg = b.dataset.k; renderProgresso(); });
@@ -1537,6 +1618,7 @@ function renderProgresso(){
     <div class="tile"><b class="${bomSentido(dif)}">${dif != null ? sinal(dif) : "–"}</b><span>kg em ${periodoDias} dias</span></div>`;
   $("pesoNota").innerHTML = (listaPesos.length ? "" : "Registre seu peso pelo menos uma vez por semana, sempre no mesmo horário, para comparar. ") +
     (esperado != null ? `Pelas calorias registradas e um gasto estimado de ${fmt(gasto,0)} kcal/dia, a variação esperada seria de <b>${sinal(esperado)} kg</b>. A conta só vale se todos os dias foram registrados; diferenças de até 1 kg são normais por causa de água e intestino.` : "");
+  renderMetaPeso(p, listaPesos);
   renderCalibra(p, ex);
   graficoLinha($("graficoPeso"), listaPesos.filter(x => x.d >= (antes.length ? antes[antes.length-1].d : inicio)), inicio);
   $("tabelaPeso").innerHTML = listaPesos.length ? `<table class="tabdados"><thead><tr><th>Data</th><th>Peso (kg)</th><th></th></tr></thead><tbody>${
@@ -1555,6 +1637,38 @@ $("pesoForm").onsubmit = e => {
   if (ultimo.d === d){ const i = perfis.findIndex(x => x.id === p.id); perfis[i] = {...perfis[i], peso:kg}; delete perfis[i].exemplo; }
   $("pesoKg").value = ""; salvar(); preencherPerfil(); renderProgresso(); renderDiario();
 };
+
+/* metas de perda de peso (diretriz ABESO 2025: ~10% para a maioria; 10–15% com IMC ≥ 40) */
+function renderMetaPeso(p, lista){
+  const box = $("pesoMeta");
+  if (!["emagrecer","definir"].includes(p.obj) || !lista.length){ box.innerHTML = ""; return; }
+  const ini = lista[0], fim = lista[lista.length-1];
+  const imc = ini.kg / (p.altura/100) ** 2;
+  const L = [];
+  if (p.obj === "emagrecer" && imc >= 25){
+    const [m1, m2] = imc >= 40 ? [10, 15] : [5, 10];
+    const perda = (ini.kg - fim.kg) / ini.kg * 100, kgPerdido = ini.kg - fim.kg;
+    const falta = pc => Math.max(0, ini.kg * pc / 100 - kgPerdido);
+    const larg = Math.max(0, Math.min(100, perda / m2 * 100));
+    L.push(`<div class="barra"><div class="lab"><span>Perda desde ${dataCurta(ini.d)}/${ini.d.slice(0,4)}</span><span>${fmt(Math.max(0,perda),1)}% · meta ${m2}%</span></div>
+      <div class="trilho" style="position:relative"><div class="enche" style="width:${larg}%;background:var(--good)"></div><i style="position:absolute;left:${m1/m2*100}%;top:0;bottom:0;width:2px;background:var(--ink);opacity:.5"></i></div></div>`);
+    const texto = perda >= m2
+      ? `<b>Meta de ${m2}% atingida.</b> Agora o mais importante é não recuperar o peso: o corpo passa a gastar menos e a fome aumenta. Considere mudar o objetivo para “Manter” e continue se pesando toda semana.`
+      : perda >= m1
+      ? `<b>Você já passou de ${m1}%</b>, o que melhora pressão, glicemia e colesterol. Faltam ${fmt(falta(m2),1)} kg para ${m2}%, a meta recomendada para o seu IMC inicial (${fmt(imc,1)}).`
+      : `Primeira meta: ${m1}% (faltam ${fmt(falta(m1),1)} kg). A meta recomendada para o seu IMC inicial (${fmt(imc,1)}) é ${m2}%, ${fmt(ini.kg*m2/100,1)} kg no total.`;
+    L.push(`<p class="small">${texto}</p>`);
+  }
+  // platô: mais de 3 meses de acompanhamento e o peso parou de cair nas últimas 4 semanas
+  const t = iso => new Date(iso + "T12:00:00").getTime();
+  const corte = hojeISO(-28), recentes = lista.filter(x => x.d >= corte), anterior = lista.filter(x => x.d < corte).pop();
+  const base = anterior || recentes[0];
+  if (p.obj === "emagrecer" && (t(fim.d) - t(ini.d)) / 864e5 >= 90 && base && base !== fim && fim.d >= corte && base.kg - fim.kg < 0.3){
+    L.push(`<p class="small status" style="margin:0">Seu peso parou de cair nas últimas 4 semanas. Depois de alguns meses isso é esperado: o corpo passa a gastar menos energia. Meça o seu gasto atual logo abaixo, mantenha a proteína na meta e não corte calorias abaixo do mínimo.</p>`);
+  }
+  if (p.obj === "emagrecer") L.push(`<p class="small muted">Para perder gordura sem perder músculo: proteína na meta e treino de força 2 a 3 vezes por semana, além de 150 a 300 minutos de atividade moderada.</p>`);
+  box.innerHTML = L.join("");
+}
 
 /* gasto real = média do que comeu − (variação de peso × 7.700 kcal ÷ dias), nos últimos 28 dias */
 function medirGasto(p){
@@ -2119,7 +2233,7 @@ function renderPerfilChips(){
 }
 function lerForm(){
   return {sexo:$("p-sexo").value, idade:num($("p-idade").value)||30, peso:num($("p-peso").value)||70,
-    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel, biotipo:$("p-biotipo").value || null, metab:$("p-metab").value || null};
+    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel, biotipo:$("p-biotipo").value || null, metab:$("p-metab").value || null, estilo:$("p-estilo").value || "equilibrada"};
 }
 const CAMPOS_META = [["kcal","Calorias","kcal"],["prot","Proteína","g"],["carb","Carboidrato","g"],["gord","Gordura","g"],
   ["fibra","Fibra (mínimo)","g"],["sodio","Sódio (máximo)","mg"],["acucarAdic","Açúcar adicionado (máximo)","g"],["gordSat","Gordura saturada (máximo)","g"]];
@@ -2130,7 +2244,9 @@ function renderMetas(p){
   const n = Object.keys(pers).filter(k => num(pers[k]) > 0).length;
   const origem = num(p.gastoReal) > 0 ? ` Gasto diário medido pelos seus dados: ${fmt(p.gastoReal,0)} kcal.`
     : fatorMetab(p) !== 1 ? ` Gasto ajustado em ${fatorMetab(p) > 1 ? "+" : ""}${fmt((fatorMetab(p)-1)*100,0)}% pelo ${p.metab ? "metabolismo" : "biotipo"} informado.` : "";
-  $("metasNota").textContent = (n ? `${n} meta${n > 1 ? "s" : ""} personalizada${n > 1 ? "s" : ""} (contorno verde). As demais são calculadas pelo perfil.` : "Calculadas automaticamente pelo perfil. Toque em “Personalizar metas” para usar outros valores.") + origem;
+  const extra = (m.ajuste ? " " + m.ajuste : "") + (m.alertaKcal ? " Atenção: " + m.alertaKcal : "");
+  $("estiloNota").textContent = (ESTILOS[p.estilo] || ESTILOS.equilibrada).desc + " Nos estudos, a perda de peso é parecida entre os estilos: escolha o que você consegue seguir.";
+  $("metasNota").textContent = (n ? `${n} meta${n > 1 ? "s" : ""} personalizada${n > 1 ? "s" : ""} (contorno verde). As demais são calculadas pelo perfil.` : "Calculadas automaticamente pelo perfil. Toque em “Personalizar metas” para usar outros valores.") + origem + extra;
 }
 const perfilEditando = () => perfis.find(x => x.id === editandoId) || perfil();
 const previewMetas = () => renderMetas({...perfilEditando(), ...lerForm()});
@@ -2150,7 +2266,10 @@ function conferirMetas(){
   for (const [k] of CAMPOS_META) $("mt-" + k).placeholder = fmt(m[k], 0);
   const soma = m.prot*4 + m.carb*4 + m.gord*9, dif = soma - m.kcal;
   const av = $("metasAviso");
-  if (Math.abs(dif) > m.kcal * 0.1){
+  if (m.alertaKcal){
+    av.hidden = false; av.className = "status err";
+    av.textContent = m.alertaKcal + " Dá para salvar, mas confira com o profissional que passou a meta.";
+  } else if (Math.abs(dif) > m.kcal * 0.1){
     av.hidden = false; av.className = "status";
     av.textContent = `Proteína, carboidrato e gordura somam ${fmt(soma,0)} kcal, ${dif > 0 ? "acima" : "abaixo"} da meta de ${fmt(m.kcal,0)} kcal. Dá para salvar assim, mas confira os números.`;
   } else av.hidden = true;
@@ -2176,7 +2295,7 @@ function preencherPerfil(){
   $("perfilTitulo").textContent = `Perfil de ${p.nome}`;
   $("p-nome").value = p.nome; $("p-sexo").value = p.sexo; $("p-idade").value = p.idade; $("p-peso").value = p.peso;
   $("p-altura").value = p.altura; $("p-ativ").value = String(p.ativ);
-  $("p-biotipo").value = p.biotipo || ""; $("p-metab").value = p.metab || "";
+  $("p-biotipo").value = p.biotipo || ""; $("p-metab").value = p.metab || ""; $("p-estilo").value = p.estilo || "equilibrada";
   objSel = p.obj; restrSel = [...(p.restr||[])]; alergSel = [...(p.alergias||[])]; outrasSel = [...(p.alergiasOutras||[])];
   $("profileNote").textContent = p.exemplo ? "Este é um perfil de exemplo. Troque pelos seus dados e salve." : "As notas usam estes dados. Atualize quando o peso ou o objetivo mudar.";
   $("perfilExcluir").hidden = perfis.length < 2;
@@ -2184,7 +2303,7 @@ function preencherPerfil(){
   renderPerfilChips(); renderMetas(p);
   $("metasForm").hidden = true; $("metasEditar").hidden = false;
 }
-["p-sexo","p-idade","p-peso","p-altura","p-ativ","p-biotipo","p-metab"].forEach(id => $(id).addEventListener("input", previewMetas));
+["p-sexo","p-idade","p-peso","p-altura","p-ativ","p-biotipo","p-metab","p-estilo"].forEach(id => $(id).addEventListener("input", previewMetas));
 $("p-outraAdd").onclick = adicionarOutraAlergia;
 $("p-outraAlerg").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); adicionarOutraAlergia(); } });
 $("profileForm").addEventListener("submit", e => {
@@ -2301,6 +2420,7 @@ function gerarRelatorio(p, nDias){
   if ((p.restr||[]).length) L.push(`Restrições: ${p.restr.map(r => RESTR[r]?.label).filter(Boolean).join(", ")}`);
   const todasAlerg = [...(p.alergias||[]).map(a => ALERGIAS[a]?.label).filter(Boolean), ...(p.alergiasOutras||[])];
   if (todasAlerg.length) L.push(`Alergias: ${todasAlerg.join(", ")}`);
+  L.push(`Estilo de dieta: ${(ESTILOS[p.estilo] || ESTILOS.equilibrada).label}`);
   if (p.metasPers && Object.keys(p.metasPers).length) L.push("Metas personalizadas pelo usuário (ex.: orientação do nutricionista).");
   L.push(`Meta diária: ${fmt(m.kcal,0)} kcal · ${m.prot} g proteína · ${m.carb} g carboidrato · ${m.gord} g gordura · ${m.fibra} g fibra`);
   L.push("");
@@ -2313,6 +2433,8 @@ function gerarRelatorio(p, nDias){
   if (pI && pF && pI !== pF) L.push(`Peso: ${fmt(pI.kg,1)} kg (${dataCurta(pI.d)}) → ${fmt(pF.kg,1)} kg (${dataCurta(pF.d)}) = ${(pF.kg - pI.kg > 0 ? "+" : "") + fmt(pF.kg - pI.kg,1)} kg`);
   else if (pF || pI) L.push(`Peso: ${fmt((pF||pI).kg,1)} kg em ${dataCurta((pF||pI).d)} (só uma pesagem no período)`);
   else L.push("Peso: nenhuma pesagem no período");
+  if (ps.length > 1){ const perda = (ps[0].kg - ps[ps.length-1].kg) / ps[0].kg * 100; L.push(`Desde a primeira pesagem (${dataCurta(ps[0].d)}/${ps[0].d.slice(0,4)}): ${perda >= 0 ? "-" : "+"}${fmt(Math.abs(perda),1)}% do peso`); }
+  { const u = ultraDe(Object.keys(dias).filter(d => d >= ini).map(d => dias[d])); if (u.pct != null) L.push(`Calorias de ultraprocessados: ${fmt(u.pct,0)}%`); }
   const freq = {};
   for (let i = 0; i < nDias; i++) for (const it of (dias[hojeISO(-i)] || [])) freq[it.nome] = (freq[it.nome] || 0) + 1;
   const top = Object.entries(freq).sort((a,b) => b[1]-a[1]).slice(0,5);
