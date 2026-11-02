@@ -410,6 +410,7 @@ details summary{cursor:pointer;font-weight:600}
       <div class="tiles" id="pesoTiles"></div>
       <div class="chart" id="graficoPeso"></div>
       <p class="small muted" id="pesoNota"></p>
+      <div class="status" id="calibra" style="background:var(--bg);display:flex;flex-direction:column;gap:8px"></div>
       <details class="small"><summary>Ver pesagens</summary><div class="tablewrap" id="tabelaPeso"></div></details>
     </div>
   </section>
@@ -498,6 +499,23 @@ details summary{cursor:pointer;font-weight:600}
           <option value="1.55">Moderado (3 a 5 treinos por semana)</option>
           <option value="1.725">Intenso (6 ou 7 treinos por semana)</option>
         </select></label>
+      <div class="grid2">
+        <label class="field"><span>Biotipo (opcional)</span>
+          <select id="p-biotipo">
+            <option value="">Não sei / não usar</option>
+            <option value="ecto">Ectomorfo (magro, dificuldade de ganhar peso)</option>
+            <option value="meso">Mesomorfo (atlético, ganha músculo fácil)</option>
+            <option value="endo">Endomorfo (ganha peso com facilidade)</option>
+          </select></label>
+        <label class="field"><span>Metabolismo (opcional)</span>
+          <select id="p-metab">
+            <option value="">Não sei (usar o cálculo)</option>
+            <option value="lento">Mais lento que a média</option>
+            <option value="normal">Normal</option>
+            <option value="rapido">Mais rápido que a média</option>
+          </select></label>
+      </div>
+      <p class="small muted" id="metabNota">Biotipo ajusta as calorias em só 5%, porque ele não define o metabolismo com segurança. Se você sabe que seu metabolismo é diferente, use o campo Metabolismo (ajuste de 10%). O mais preciso é o ajuste pelos seus dados, na aba Progresso.</p>
       <div><h3 style="margin-bottom:8px">Objetivo</h3><div class="chips" id="p-obj"></div></div>
       <div><h3 style="margin-bottom:8px">Restrições alimentares</h3><div class="chips" id="p-restr"></div></div>
       <div><h3 style="margin-bottom:4px">Alergias</h3><p class="small muted" style="margin-bottom:8px">Produto que contém o alérgeno fica com nota 0; “pode conter traços” fica com nota máxima 3.</p><div class="chips" id="p-alerg"></div>
@@ -964,10 +982,25 @@ function metas(p){
     fibra: v("fibra") ?? Math.round(kcal/1000*14), sodio: v("sodio") ?? 2000,
     acucarAdic: v("acucarAdic") ?? Math.round(kcal*0.10/4), gordSat: v("gordSat") ?? Math.round(kcal*0.10/9)};
 }
-function metasCalculadas(p){
+/* fator de metabolismo: o campo Metabolismo vale mais que o biotipo */
+function fatorMetab(p){
+  if (p.metab === "lento") return 0.90;
+  if (p.metab === "rapido") return 1.10;
+  if (p.metab === "normal") return 1;
+  if (p.biotipo === "ecto") return 1.05;
+  if (p.biotipo === "endo") return 0.95;
+  return 1;
+}
+/* gasto diário: o medido pelos seus dados, se houver; senão a fórmula ajustada pelo metabolismo */
+function gastoBase(p){
+  if (num(p.gastoReal) > 0) return Math.round(num(p.gastoReal));
   const tmb = 10*p.peso + 6.25*p.altura - 5*p.idade + (p.sexo === "m" ? 5 : -161);
+  return Math.round(tmb * Number(p.ativ) * fatorMetab(p));
+}
+function gastoFormula(p){ return gastoBase({...p, gastoReal:null}); }
+function metasCalculadas(p){
   const o = OBJETIVOS[p.obj] || OBJETIVOS.manter;
-  const kcal = Math.round(tmb * Number(p.ativ) * o.kcal / 10) * 10;
+  const kcal = Math.round(gastoBase(p) * o.kcal / 10) * 10;
   const prot = Math.round(p.peso * o.protKg);
   const gord = Math.round(kcal * 0.25 / 9);
   const carb = Math.max(0, Math.round((kcal - prot*4 - gord*9) / 4));
@@ -1429,7 +1462,7 @@ function totaisDia(itens){
   return tot;
 }
 const dataCurta = iso => { const [y,m,d] = iso.split("-"); return `${d}/${m}`; };
-const gastoDiario = p => Math.round((10*p.peso + 6.25*p.altura - 5*p.idade + (p.sexo === "m" ? 5 : -161)) * Number(p.ativ));
+const gastoDiario = p => gastoBase(p);
 
 /* dados de exemplo para quem ainda não registrou nada (não são salvos) */
 function dadosExemplo(p, m){
@@ -1504,6 +1537,7 @@ function renderProgresso(){
     <div class="tile"><b class="${bomSentido(dif)}">${dif != null ? sinal(dif) : "–"}</b><span>kg em ${periodoDias} dias</span></div>`;
   $("pesoNota").innerHTML = (listaPesos.length ? "" : "Registre seu peso pelo menos uma vez por semana, sempre no mesmo horário, para comparar. ") +
     (esperado != null ? `Pelas calorias registradas e um gasto estimado de ${fmt(gasto,0)} kcal/dia, a variação esperada seria de <b>${sinal(esperado)} kg</b>. A conta só vale se todos os dias foram registrados; diferenças de até 1 kg são normais por causa de água e intestino.` : "");
+  renderCalibra(p, ex);
   graficoLinha($("graficoPeso"), listaPesos.filter(x => x.d >= (antes.length ? antes[antes.length-1].d : inicio)), inicio);
   $("tabelaPeso").innerHTML = listaPesos.length ? `<table class="tabdados"><thead><tr><th>Data</th><th>Peso (kg)</th><th></th></tr></thead><tbody>${
     listaPesos.slice().reverse().map(x => `<tr><td>${dataCurta(x.d)}/${x.d.slice(0,4)}</td><td>${fmt(x.kg,1)}</td><td>${ex ? "" : `<button class="x" type="button" data-pd="${x.d}" aria-label="Apagar pesagem de ${dataCurta(x.d)}">×</button>`}</td></tr>`).join("")}</tbody></table>` : '<p class="none">Nenhuma pesagem.</p>';
@@ -1521,6 +1555,53 @@ $("pesoForm").onsubmit = e => {
   if (ultimo.d === d){ const i = perfis.findIndex(x => x.id === p.id); perfis[i] = {...perfis[i], peso:kg}; delete perfis[i].exemplo; }
   $("pesoKg").value = ""; salvar(); preencherPerfil(); renderProgresso(); renderDiario();
 };
+
+/* gasto real = média do que comeu − (variação de peso × 7.700 kcal ÷ dias), nos últimos 28 dias */
+function medirGasto(p){
+  const dias = diario[p.id] || {}, ini = hojeISO(-27);
+  const reg = Object.keys(dias).filter(d => d >= ini && dias[d].length).sort();
+  const ps = (pesos[p.id] || []).slice().sort((a,b) => a.d.localeCompare(b.d));
+  const antes = ps.filter(x => x.d < ini), dentro = ps.filter(x => x.d >= ini);
+  const pI = antes.length ? antes[antes.length-1] : dentro[0], pF = dentro[dentro.length-1];
+  const faltam = [];
+  if (reg.length < 14) faltam.push(`${14 - reg.length} dia${14 - reg.length === 1 ? "" : "s"} de diário completo`);
+  const t = iso => new Date(iso + "T12:00:00").getTime();
+  const intervalo = pI && pF && pI !== pF ? Math.round((t(pF.d) - t(pI.d)) / 864e5) : 0;
+  if (intervalo < 10) faltam.push("2 pesagens com pelo menos 10 dias de diferença");
+  if (faltam.length) return {pronto:false, faltam};
+  const media = reg.reduce((s, d) => s + totaisDia(dias[d]).kcal, 0) / reg.length;
+  const gasto = Math.round((media - (pF.kg - pI.kg) * 7700 / intervalo) / 10) * 10;
+  const formula = gastoFormula(p);
+  return {pronto:true, gasto, media:Math.round(media), formula, dias:reg.length, intervalo, dif:pF.kg - pI.kg,
+    suspeito: gasto < 1000 || gasto > 6000 || Math.abs(gasto - formula) > formula * 0.35};
+}
+function renderCalibra(p, exemplo){
+  const box = $("calibra");
+  if (exemplo){ box.hidden = true; return; }
+  box.hidden = false;
+  const r = medirGasto(p);
+  const atual = num(p.gastoReal) > 0 ? `<p class="small">Suas metas usam o gasto medido de <b>${fmt(p.gastoReal,0)} kcal/dia</b>${p.gastoRealData ? ` (desde ${dataCurta(p.gastoRealData)})` : ""}. <button class="btn sm ghost" type="button" id="calibraTirar">Voltar ao cálculo do perfil</button></p>` : "";
+  if (!r.pronto){
+    box.innerHTML = `<b class="small">Seu metabolismo pelos seus dados</b><p class="small muted">Para medir o seu gasto real, faltam: ${r.faltam.join(" e ")} (nos últimos 28 dias). Registre tudo o que comer, inclusive bebidas e beliscos.</p>${atual}`;
+  } else {
+    const diff = r.gasto - r.formula, pct = Math.round(diff / r.formula * 100);
+    const leitura = Math.abs(pct) < 5 ? "parecido com o cálculo do perfil" : pct > 0 ? `${pct}% mais rápido que o cálculo do perfil` : `${Math.abs(pct)}% mais lento que o cálculo do perfil`;
+    box.innerHTML = `<b class="small">Seu metabolismo pelos seus dados</b>
+      <p class="small">Em ${r.dias} dias você comeu em média <b>${fmt(r.media,0)} kcal</b> e seu peso variou <b>${(r.dif > 0 ? "+" : "") + fmt(r.dif,1)} kg</b> em ${r.intervalo} dias. Isso indica um gasto de <b>${fmt(r.gasto,0)} kcal/dia</b>, ${leitura} (${fmt(r.formula,0)} kcal).</p>
+      ${r.suspeito ? `<p class="small muted">O resultado ficou muito diferente do esperado. Normalmente isso acontece quando faltam refeições no diário. Continue registrando e confira de novo em alguns dias.</p>`
+        : `<div class="row"><button class="btn sm primary" type="button" id="calibraUsar">Usar ${fmt(r.gasto,0)} kcal/dia nas minhas metas</button></div>`}
+      ${atual}`;
+    if ($("calibraUsar")) $("calibraUsar").onclick = () => {
+      const i = perfis.findIndex(x => x.id === p.id);
+      perfis[i] = {...perfis[i], gastoReal:r.gasto, gastoRealData:hojeISO(0)}; salvar(); tudo();
+      setStatus(`Metas recalculadas com o seu gasto medido de ${fmt(r.gasto,0)} kcal/dia.`, "ok");
+    };
+  }
+  if ($("calibraTirar")) $("calibraTirar").onclick = () => {
+    const i = perfis.findIndex(x => x.id === p.id);
+    const {gastoReal, gastoRealData, ...resto} = perfis[i]; perfis[i] = resto; salvar(); tudo();
+  };
+}
 
 /* ---------- gráficos (SVG feito à mão) ---------- */
 const SVGNS = "http://www.w3.org/2000/svg";
@@ -2038,7 +2119,7 @@ function renderPerfilChips(){
 }
 function lerForm(){
   return {sexo:$("p-sexo").value, idade:num($("p-idade").value)||30, peso:num($("p-peso").value)||70,
-    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel};
+    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel, biotipo:$("p-biotipo").value || null, metab:$("p-metab").value || null};
 }
 const CAMPOS_META = [["kcal","Calorias","kcal"],["prot","Proteína","g"],["carb","Carboidrato","g"],["gord","Gordura","g"],
   ["fibra","Fibra (mínimo)","g"],["sodio","Sódio (máximo)","mg"],["acucarAdic","Açúcar adicionado (máximo)","g"],["gordSat","Gordura saturada (máximo)","g"]];
@@ -2047,7 +2128,9 @@ function renderMetas(p){
   const it = [["kcal","Calorias","kcal"],["prot","Proteína","g"],["carb","Carboidrato","g"],["gord","Gordura","g"],["fibra","Fibra (mín.)","g"],["sodio","Sódio (máx.)","mg"]];
   $("targets").innerHTML = it.map(([k,l,u]) => `<div${num(pers[k]) > 0 ? ' style="outline:2px solid var(--accent);outline-offset:-2px"' : ""}><b>${fmt(m[k],0)}</b><span>${u} · ${l}${num(pers[k]) > 0 ? " · sua meta" : ""}</span></div>`).join("");
   const n = Object.keys(pers).filter(k => num(pers[k]) > 0).length;
-  $("metasNota").textContent = n ? `${n} meta${n > 1 ? "s" : ""} personalizada${n > 1 ? "s" : ""} (contorno verde). As demais são calculadas pelo perfil.` : "Calculadas automaticamente pelo perfil. Toque em “Personalizar metas” para usar outros valores.";
+  const origem = num(p.gastoReal) > 0 ? ` Gasto diário medido pelos seus dados: ${fmt(p.gastoReal,0)} kcal.`
+    : fatorMetab(p) !== 1 ? ` Gasto ajustado em ${fatorMetab(p) > 1 ? "+" : ""}${fmt((fatorMetab(p)-1)*100,0)}% pelo ${p.metab ? "metabolismo" : "biotipo"} informado.` : "";
+  $("metasNota").textContent = (n ? `${n} meta${n > 1 ? "s" : ""} personalizada${n > 1 ? "s" : ""} (contorno verde). As demais são calculadas pelo perfil.` : "Calculadas automaticamente pelo perfil. Toque em “Personalizar metas” para usar outros valores.") + origem;
 }
 const perfilEditando = () => perfis.find(x => x.id === editandoId) || perfil();
 const previewMetas = () => renderMetas({...perfilEditando(), ...lerForm()});
@@ -2093,6 +2176,7 @@ function preencherPerfil(){
   $("perfilTitulo").textContent = `Perfil de ${p.nome}`;
   $("p-nome").value = p.nome; $("p-sexo").value = p.sexo; $("p-idade").value = p.idade; $("p-peso").value = p.peso;
   $("p-altura").value = p.altura; $("p-ativ").value = String(p.ativ);
+  $("p-biotipo").value = p.biotipo || ""; $("p-metab").value = p.metab || "";
   objSel = p.obj; restrSel = [...(p.restr||[])]; alergSel = [...(p.alergias||[])]; outrasSel = [...(p.alergiasOutras||[])];
   $("profileNote").textContent = p.exemplo ? "Este é um perfil de exemplo. Troque pelos seus dados e salve." : "As notas usam estes dados. Atualize quando o peso ou o objetivo mudar.";
   $("perfilExcluir").hidden = perfis.length < 2;
@@ -2100,7 +2184,7 @@ function preencherPerfil(){
   renderPerfilChips(); renderMetas(p);
   $("metasForm").hidden = true; $("metasEditar").hidden = false;
 }
-["p-sexo","p-idade","p-peso","p-altura","p-ativ"].forEach(id => $(id).addEventListener("input", previewMetas));
+["p-sexo","p-idade","p-peso","p-altura","p-ativ","p-biotipo","p-metab"].forEach(id => $(id).addEventListener("input", previewMetas));
 $("p-outraAdd").onclick = adicionarOutraAlergia;
 $("p-outraAlerg").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); adicionarOutraAlergia(); } });
 $("profileForm").addEventListener("submit", e => {
