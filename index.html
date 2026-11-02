@@ -495,6 +495,16 @@ details summary{cursor:pointer;font-weight:600}
         <label class="field"><span>Peso (kg)</span><input type="number" id="p-peso" min="30" max="300" step="0.1"></label>
         <label class="field"><span>Altura (cm)</span><input type="number" id="p-altura" min="120" max="230"></label>
       </div>
+      <div class="grid2">
+        <label class="field"><span>Gordura corporal % (opcional)</span><input type="number" id="p-gordura" min="3" max="70" step="0.1" placeholder="Ex.: 25 (bioimpedância)"></label>
+        <label class="field"><span>Fórmula da taxa basal</span>
+          <select id="p-formula">
+            <option value="mifflin">Mifflin-St Jeor (padrão)</option>
+            <option value="harris">Harris-Benedict revisada</option>
+            <option value="oms">OMS (Schofield)</option>
+            <option value="katch">Katch-McArdle (usa % de gordura)</option>
+          </select></label>
+      </div>
       <label class="field"><span>Nível de atividade</span>
         <select id="p-ativ">
           <option value="1.2">Sedentário (pouco ou nenhum exercício)</option>
@@ -546,6 +556,7 @@ details summary{cursor:pointer;font-weight:600}
         <h2>Meta diária</h2>
         <button class="btn sm" type="button" id="metasEditar">Personalizar metas</button>
       </div>
+      <div id="tmbBox" class="status" style="background:var(--bg);display:flex;flex-direction:column;gap:6px"></div>
       <p class="small muted" id="metasNota"></p>
       <div class="targets" id="targets"></div>
       <form id="metasForm" hidden autocomplete="off" style="display:flex;flex-direction:column;gap:10px">
@@ -559,7 +570,7 @@ details summary{cursor:pointer;font-weight:600}
         </div>
       </form>
       <details class="small muted"><summary>Como calculamos</summary>
-        <p style="margin-top:8px">Gasto em repouso pela fórmula de Mifflin-St Jeor, multiplicado pelo nível de atividade. Emagrecer tira 20% das calorias, definir tira 10%, ganhar massa soma 10%. Para emagrecer ou definir, as calorias nunca ficam abaixo de 1.200 kcal (mulheres) ou 1.500 kcal (homens), nem mais de 1.000 kcal abaixo do seu gasto. Proteína por quilo de peso conforme o objetivo. Gordura e carboidrato seguem o estilo de dieta: equilibrada 25% de gordura, mediterrânea 30%, low-fat 20%, low-carb 20% de carboidrato (máx. 130 g). Fibra de 14 g a cada 1.000 kcal. Sódio até 2.000 mg e açúcar adicionado até 10% das calorias, como recomenda a OMS.</p>
+        <p style="margin-top:8px">Taxa metabólica basal (gasto em repouso) pela fórmula escolhida no perfil, por padrão Mifflin-St Jeor, multiplicada pelo nível de atividade. Emagrecer tira 20% das calorias, definir tira 10%, ganhar massa soma 10%. Para emagrecer ou definir, as calorias nunca ficam abaixo de 1.200 kcal (mulheres) ou 1.500 kcal (homens), nem mais de 1.000 kcal abaixo do seu gasto. Proteína por quilo de peso conforme o objetivo. Gordura e carboidrato seguem o estilo de dieta: equilibrada 25% de gordura, mediterrânea 30%, low-fat 20%, low-carb 20% de carboidrato (máx. 130 g). Fibra de 14 g a cada 1.000 kcal. Sódio até 2.000 mg e açúcar adicionado até 10% das calorias, como recomenda a OMS.</p>
       </details>
       <details class="small muted" id="detNota"><summary>Como funciona a nota</summary>
         <p style="margin-top:8px">A nota parte de 5 e sobe com proteína, fibras e pouco açúcar ou sódio. Desce com excesso de açúcar adicionado, gordura saturada, sódio, gordura trans, aditivos de risco e ultraprocessamento. O peso de cada item muda conforme o objetivo do perfil. Produtos que batem com uma restrição ficam com nota máxima 2. Os selos "ALTO EM" seguem a Anvisa; o Nutri-Score e o grau de processamento (NOVA) vêm da base Open Food Facts quando disponíveis.</p>
@@ -1028,10 +1039,27 @@ function fatorMetab(p){
   return 1;
 }
 /* gasto diário: o medido pelos seus dados, se houver; senão a fórmula ajustada pelo metabolismo */
+/* taxa metabólica basal (kcal/dia) por fórmula */
+const FORMULAS_TMB = {
+  mifflin:{label:"Mifflin-St Jeor", nota:"A mais precisa para a maioria dos adultos; recomendada pela Academy of Nutrition and Dietetics.",
+    f: p => 10*p.peso + 6.25*p.altura - 5*p.idade + (p.sexo === "m" ? 5 : -161)},
+  harris:{label:"Harris-Benedict revisada", nota:"Clássica (revisão de 1984); tende a dar um pouco mais que a Mifflin.",
+    f: p => p.sexo === "m" ? 88.362 + 13.397*p.peso + 4.799*p.altura - 5.677*p.idade : 447.593 + 9.247*p.peso + 3.098*p.altura - 4.330*p.idade},
+  oms:{label:"OMS (Schofield)", nota:"Usa só peso, sexo e faixa de idade. É a da OMS/FAO usada em muitas aulas e no SUS.",
+    f: p => {
+      const a = p.idade, m = p.sexo === "m";
+      const [k, c] = m ? (a < 18 ? [0.074, 2.754] : a < 30 ? [0.063, 2.896] : a < 60 ? [0.048, 3.653] : [0.049, 2.459])
+                       : (a < 18 ? [0.056, 2.898] : a < 30 ? [0.062, 2.036] : a < 60 ? [0.034, 3.538] : [0.038, 2.755]);
+      return (k*p.peso + c) * 239;
+    }},
+  katch:{label:"Katch-McArdle", nota:"Usa a massa magra; boa para quem treina e sabe o % de gordura (bioimpedância ou dobras).",
+    f: p => num(p.gordura) > 0 ? 370 + 21.6 * p.peso * (1 - num(p.gordura)/100) : null}
+};
+function formulaUsada(p){ return p.formula === "katch" && !(num(p.gordura) > 0) ? "mifflin" : (FORMULAS_TMB[p.formula] ? p.formula : "mifflin"); }
+const tmbDe = (p, chave = formulaUsada(p)) => { const v = FORMULAS_TMB[chave].f(p); return v == null ? null : Math.round(v); };
 function gastoBase(p){
   if (num(p.gastoReal) > 0) return Math.round(num(p.gastoReal));
-  const tmb = 10*p.peso + 6.25*p.altura - 5*p.idade + (p.sexo === "m" ? 5 : -161);
-  return Math.round(tmb * Number(p.ativ) * fatorMetab(p));
+  return Math.round(tmbDe(p) * Number(p.ativ) * fatorMetab(p));
 }
 function gastoFormula(p){ return gastoBase({...p, gastoReal:null}); }
 function metasCalculadas(p){
@@ -2233,7 +2261,7 @@ function renderPerfilChips(){
 }
 function lerForm(){
   return {sexo:$("p-sexo").value, idade:num($("p-idade").value)||30, peso:num($("p-peso").value)||70,
-    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel, biotipo:$("p-biotipo").value || null, metab:$("p-metab").value || null, estilo:$("p-estilo").value || "equilibrada"};
+    altura:num($("p-altura").value)||170, ativ:Number($("p-ativ").value), obj:objSel, restr:restrSel, alergias:alergSel, alergiasOutras:outrasSel, biotipo:$("p-biotipo").value || null, metab:$("p-metab").value || null, estilo:$("p-estilo").value || "equilibrada", gordura:num($("p-gordura").value) || null, formula:$("p-formula").value || "mifflin"};
 }
 const CAMPOS_META = [["kcal","Calorias","kcal"],["prot","Proteína","g"],["carb","Carboidrato","g"],["gord","Gordura","g"],
   ["fibra","Fibra (mínimo)","g"],["sodio","Sódio (máximo)","mg"],["acucarAdic","Açúcar adicionado (máximo)","g"],["gordSat","Gordura saturada (máximo)","g"]];
@@ -2245,8 +2273,25 @@ function renderMetas(p){
   const origem = num(p.gastoReal) > 0 ? ` Gasto diário medido pelos seus dados: ${fmt(p.gastoReal,0)} kcal.`
     : fatorMetab(p) !== 1 ? ` Gasto ajustado em ${fatorMetab(p) > 1 ? "+" : ""}${fmt((fatorMetab(p)-1)*100,0)}% pelo ${p.metab ? "metabolismo" : "biotipo"} informado.` : "";
   const extra = (m.ajuste ? " " + m.ajuste : "") + (m.alertaKcal ? " Atenção: " + m.alertaKcal : "");
+  renderTMB(p);
   $("estiloNota").textContent = (ESTILOS[p.estilo] || ESTILOS.equilibrada).desc + " Nos estudos, a perda de peso é parecida entre os estilos: escolha o que você consegue seguir.";
   $("metasNota").textContent = (n ? `${n} meta${n > 1 ? "s" : ""} personalizada${n > 1 ? "s" : ""} (contorno verde). As demais são calculadas pelo perfil.` : "Calculadas automaticamente pelo perfil. Toque em “Personalizar metas” para usar outros valores.") + origem + extra;
+}
+function renderTMB(p){
+  const usada = formulaUsada(p), tmb = tmbDe(p), fm = fatorMetab(p), gasto = Math.round(tmb * Number(p.ativ) * fm);
+  const ATIV = {"1.2":"sedentário","1.375":"leve","1.55":"moderado","1.725":"intenso"};
+  const linhas = Object.entries(FORMULAS_TMB).map(([k, F]) => {
+    const v = tmbDe(p, k);
+    return `<tr${k === usada ? ' style="font-weight:700"' : ""}><td>${F.label}${k === usada ? " ✓" : ""}</td><td style="text-align:right">${v == null ? '<span class="muted">informe % de gordura</span>' : fmt(v,0) + " kcal"}</td></tr>`;
+  }).join("");
+  $("tmbBox").innerHTML = `
+    <div class="row" style="justify-content:space-between;align-items:baseline"><b class="small">Taxa metabólica basal</b><span style="font-family:var(--f-display);font-weight:800;font-size:1.3rem">${fmt(tmb,0)} kcal/dia</span></div>
+    <p class="small muted" style="margin:0">É o que o seu corpo gasta em repouso total, só para se manter vivo. Fórmula: ${FORMULAS_TMB[usada].label}${p.formula === "katch" && usada !== "katch" ? " (Katch-McArdle precisa do % de gordura)" : ""}.</p>
+    <p class="small" style="margin:0">Gasto diário estimado: ${fmt(tmb,0)} × ${String(p.ativ).replace(".", ",")} (atividade ${ATIV[String(p.ativ)] || ""})${fm !== 1 ? ` × ${String(fm).replace(".", ",")} (metabolismo)` : ""} = <b>${fmt(gasto,0)} kcal</b>${num(p.gastoReal) > 0 ? ` · suas metas usam o gasto medido de ${fmt(p.gastoReal,0)} kcal` : ""}.</p>
+    <details class="small"><summary>Comparar fórmulas</summary>
+      <table class="tabdados" style="margin-top:6px"><tbody>${linhas}</tbody></table>
+      <p class="muted" style="margin-top:6px">${FORMULAS_TMB[usada].nota} Toda fórmula é uma estimativa e pode errar 10% ou mais para uma pessoa. O valor mais confiável é o gasto medido pelos seus dados, na aba Progresso, ou a calorimetria indireta feita por um profissional.</p>
+    </details>`;
 }
 const perfilEditando = () => perfis.find(x => x.id === editandoId) || perfil();
 const previewMetas = () => renderMetas({...perfilEditando(), ...lerForm()});
@@ -2296,6 +2341,7 @@ function preencherPerfil(){
   $("p-nome").value = p.nome; $("p-sexo").value = p.sexo; $("p-idade").value = p.idade; $("p-peso").value = p.peso;
   $("p-altura").value = p.altura; $("p-ativ").value = String(p.ativ);
   $("p-biotipo").value = p.biotipo || ""; $("p-metab").value = p.metab || ""; $("p-estilo").value = p.estilo || "equilibrada";
+  $("p-gordura").value = p.gordura || ""; $("p-formula").value = p.formula || "mifflin";
   objSel = p.obj; restrSel = [...(p.restr||[])]; alergSel = [...(p.alergias||[])]; outrasSel = [...(p.alergiasOutras||[])];
   $("profileNote").textContent = p.exemplo ? "Este é um perfil de exemplo. Troque pelos seus dados e salve." : "As notas usam estes dados. Atualize quando o peso ou o objetivo mudar.";
   $("perfilExcluir").hidden = perfis.length < 2;
@@ -2303,7 +2349,7 @@ function preencherPerfil(){
   renderPerfilChips(); renderMetas(p);
   $("metasForm").hidden = true; $("metasEditar").hidden = false;
 }
-["p-sexo","p-idade","p-peso","p-altura","p-ativ","p-biotipo","p-metab","p-estilo"].forEach(id => $(id).addEventListener("input", previewMetas));
+["p-sexo","p-idade","p-peso","p-altura","p-ativ","p-biotipo","p-metab","p-estilo","p-gordura","p-formula"].forEach(id => $(id).addEventListener("input", previewMetas));
 $("p-outraAdd").onclick = adicionarOutraAlergia;
 $("p-outraAlerg").addEventListener("keydown", e => { if (e.key === "Enter"){ e.preventDefault(); adicionarOutraAlergia(); } });
 $("profileForm").addEventListener("submit", e => {
@@ -2420,6 +2466,7 @@ function gerarRelatorio(p, nDias){
   if ((p.restr||[]).length) L.push(`Restrições: ${p.restr.map(r => RESTR[r]?.label).filter(Boolean).join(", ")}`);
   const todasAlerg = [...(p.alergias||[]).map(a => ALERGIAS[a]?.label).filter(Boolean), ...(p.alergiasOutras||[])];
   if (todasAlerg.length) L.push(`Alergias: ${todasAlerg.join(", ")}`);
+  L.push(`Taxa metabólica basal: ${fmt(tmbDe(p),0)} kcal/dia (${FORMULAS_TMB[formulaUsada(p)].label})${num(p.gordura) > 0 ? ` · gordura corporal ${fmt(p.gordura,1)}%` : ""}`);
   L.push(`Estilo de dieta: ${(ESTILOS[p.estilo] || ESTILOS.equilibrada).label}`);
   if (p.metasPers && Object.keys(p.metasPers).length) L.push("Metas personalizadas pelo usuário (ex.: orientação do nutricionista).");
   L.push(`Meta diária: ${fmt(m.kcal,0)} kcal · ${m.prot} g proteína · ${m.carb} g carboidrato · ${m.gord} g gordura · ${m.fibra} g fibra`);
