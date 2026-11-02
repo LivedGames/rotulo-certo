@@ -1,0 +1,291 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rótulo Certo · Apresentação</title>
+<meta name="description" content="Apresentação do Rótulo Certo para nutricionistas e personal trainers.">
+<meta name="theme-color" content="#16201A">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0E1511;overflow:hidden;font-family:Figtree,Arial,sans-serif}
+#palco{position:fixed;inset:0;overflow:hidden}
+#trilho{width:1920px;height:1080px;position:absolute;left:50%;top:50%;transform-origin:center center}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+.slide.atual{opacity:1;visibility:visible}
+.slide *{margin:0;box-sizing:border-box}
+.slide ul,.slide ol{padding-left:1.2em}
+#barra{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(22,32,26,.82);backdrop-filter:blur(6px);border:1px solid rgba(243,245,239,.14);border-radius:99px;padding:5px;color:#F3F5EF;font-size:14px;transition:opacity .3s}
+#barra button{all:unset;cursor:pointer;width:38px;height:38px;border-radius:99px;display:grid;place-items:center}
+#barra button:hover,#barra button:focus-visible{background:rgba(243,245,239,.14)}
+#barra button:disabled{opacity:.35;cursor:default;background:none}
+#barra svg{width:20px;height:20px}
+#conta{min-width:58px;text-align:center;font-variant-numeric:tabular-nums}
+body.quieto #barra{opacity:0}
+#dica{display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(22,32,26,.85);color:#F3F5EF;font-size:14px;padding:8px 14px;border-radius:99px;white-space:nowrap}
+@media (orientation:portrait) and (max-width:700px){#dica{display:block}}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}}
+</style>
+</head>
+<body>
+<main id="palco" aria-roledescription="apresentação"><div id="trilho">
+<section id="s-capa" class="slide" data-transition="fade" style="background:#16201A;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:36px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#5DBB82">Para nutricionistas e personal trainers</p>
+<h1 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:150px;font-weight:800;line-height:1;letter-spacing:-3px;color:#F3F5EF">Rótulo Certo</h1>
+<p style="font-size:48px;line-height:1.3;color:#CFDCD2">A nota de cada alimento, calculada para a meta de cada paciente.</p>
+<p style="font-size:28px;color:#9AA79D">Moisés Silva · rotulo-certo-production.up.railway.app</p>
+</div>
+<img src="/apresentacao/inicio.png" alt="Tela inicial do Rótulo Certo no celular, com as opções de tirar foto do rótulo, escolher da galeria, digitar valores e escanear o código de barras" style="width:400px;height:800px;object-fit:cover;border:10px solid #2C3830;border-radius:48px">
+
+</section>
+<section id="s-problema" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:64px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">O problema</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:76px;font-weight:700;line-height:1.1;color:#16201A">O paciente decide a dieta no corredor do mercado</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:32px;flex:1">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:48px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:56px;height:56px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:40px;font-weight:700;color:#16201A">Rótulo difícil</h3>
+<p style="font-size:30px;line-height:1.4;color:#4E5A51">Tabela por porção, aditivos com nome técnico e letra pequena. Comparar dois produtos na gôndola leva tempo.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:48px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:56px;height:56px"><path d="M16 21v-2a4 4 0 0 0-4-4H6a4 4 0 0 0-4 4v2"/><circle cx="9" cy="7" r="4"/><path d="M22 21v-2a4 4 0 0 0-3-3.87"/><path d="M16 3.13a4 4 0 0 1 0 7.75"/></svg>
+<h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:40px;font-weight:700;color:#16201A">Nota igual para todos</h3>
+<p style="font-size:30px;line-height:1.4;color:#4E5A51">Os apps de rótulo mais conhecidos dão uma nota única, a mesma para quem quer ganhar massa e para quem quer emagrecer.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:48px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:56px;height:56px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg>
+<h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:40px;font-weight:700;color:#16201A">Comida sem código</h3>
+<p style="font-size:30px;line-height:1.4;color:#4E5A51">O shake, o almoço caseiro e a fruta ficam de fora dos leitores de código de barras.</p>
+</div>
+</div>
+
+</section>
+<section id="s-ideia" class="slide" data-transition="fade" style="background:#2C7A4B;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#D7EEDD">A ideia</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:88px;font-weight:700;line-height:1.12;color:#F3F5EF">Uma nota de 0 a 10 que muda conforme o objetivo, as restrições e as alergias de cada pessoa.</h2>
+<p style="font-size:36px;line-height:1.4;color:#E3F1E7">O mesmo produto pode ser ótimo para um paciente e proibido para outro.</p>
+
+</section>
+<section id="s-entradas" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">Como funciona</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">Três jeitos de registrar qualquer comida</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;gap:28px;align-items:start;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:32px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:48px;height:48px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Código de barras</h3><p style="font-size:28px;line-height:1.4;color:#4E5A51">Busca na base do próprio app e na Open Food Facts.</p></div>
+</div>
+<div style="display:flex;flex-direction:row;gap:28px;align-items:start;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:32px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:48px;height:48px"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Foto do rótulo</h3><p style="font-size:28px;line-height:1.4;color:#4E5A51">A IA lê a tabela, os ingredientes e o quadro de alérgicos.</p></div>
+</div>
+<div style="display:flex;flex-direction:row;gap:28px;align-items:start;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:32px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:48px;height:48px"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Texto livre</h3><p style="font-size:28px;line-height:1.4;color:#4E5A51">“Shake com 300 ml de leite, 1 banana e 1 scoop de whey”, calculado pela tabela TACO.</p></div>
+</div>
+</div>
+</div>
+<img src="/apresentacao/shake.png" alt="Resultado do app para um shake de leite, banana, aveia e whey: nota 7,5 para ganho de massa, com a lista de ingredientes e quantidades editáveis" style="width:400px;height:800px;object-fit:cover;border:10px solid #16201A;border-radius:48px">
+
+</section>
+<section id="s-notas" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">A nota</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">A nota segue o objetivo e as restrições</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:64px;align-items:start">
+<div style="flex:1;display:flex;flex-direction:column">
+<table style="font-family:'Figtree', Arial, sans-serif;font-size:32px;color:#16201A;background:#FFFFFF;border-radius:16px">
+<tr style="background:#E2F0E6"><th style="width:56%;text-align:left">Alimento</th><th style="width:22%;text-align:right">Ganhar massa</th><th style="width:22%;text-align:right">Emagrecer</th></tr>
+<tr><td>Shake de leite, banana, aveia e whey</td><td style="text-align:right">7,5</td><td style="text-align:right">8,5</td></tr>
+<tr><td>Peito de peru fatiado</td><td style="text-align:right">4</td><td style="text-align:right">4,5</td></tr>
+<tr><td>Refrigerante de cola</td><td style="text-align:right">1</td><td style="text-align:right">0</td></tr>
+<tr><td>Iogurte proteico natural</td><td style="text-align:right">10</td><td style="text-align:right">10</td></tr>
+</table>
+</div>
+<div style="width:520px;display:flex;flex-direction:column;gap:24px;background:#16201A;border-radius:24px;padding:48px">
+<h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:40px;font-weight:700;color:#F3F5EF">O mesmo iogurte, outro paciente</h3>
+<p style="font-size:30px;line-height:1.4;color:#CFDCD2">Com restrição a lactose, a nota cai para no máximo <b style="color:#F3F5EF">2</b>.</p>
+<p style="font-size:30px;line-height:1.4;color:#CFDCD2">Com alergia a leite, vira <b style="color:#F3F5EF">0</b> e aparece um alerta vermelho.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5D6A60">Notas calculadas pelo app com o perfil de exemplo: 28 anos, 75 kg, 1,78 m, atividade moderada.</p>
+
+</section>
+<section id="s-criterios" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:80px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">O que a nota considera</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:64px;font-weight:700;line-height:1.1;color:#16201A">Critérios com base em fontes oficiais</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:20px">
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:24px"><h3 style="font-size:32px;font-weight:700;color:#16201A">Nutrientes</h3><p style="font-size:24px;line-height:1.4;color:#4E5A51">Proteína por caloria, fibra, açúcar adicionado, gordura saturada e sódio</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:24px"><h3 style="font-size:32px;font-weight:700;color:#16201A">Lupa da Anvisa</h3><p style="font-size:24px;line-height:1.4;color:#4E5A51">Selos “Alto em” pelos limites da RDC 429/2020</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:24px"><h3 style="font-size:32px;font-weight:700;color:#16201A">Aditivos</h3><p style="font-size:24px;line-height:1.4;color:#4E5A51">Risco alto, moderado ou baixo, segundo OMS/IARC e EFSA</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:24px"><h3 style="font-size:32px;font-weight:700;color:#16201A">Processamento</h3><p style="font-size:24px;line-height:1.4;color:#4E5A51">Classificação NOVA, de in natura a ultraprocessado</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:24px"><h3 style="font-size:32px;font-weight:700;color:#16201A">Objetivo</h3><p style="font-size:24px;line-height:1.4;color:#4E5A51">Pesos diferentes para massa, emagrecimento, definição e manutenção</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:24px"><h3 style="font-size:32px;font-weight:700;color:#16201A">Restrições</h3><p style="font-size:24px;line-height:1.4;color:#4E5A51">Lactose, glúten, vegano e alergias do perfil</p></div>
+</div>
+</div>
+<img src="/apresentacao/peru.png" alt="Resultado do app para peito de peru fatiado: nota 4, selo Alto em sódio, ultraprocessado e alerta de nitrito de sódio como aditivo de risco alto" style="width:400px;height:800px;object-fit:cover;border:10px solid #16201A;border-radius:48px">
+
+</section>
+<section id="s-alergias" class="slide" data-transition="fade" style="background:#16201A;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<img src="/apresentacao/alergia.png" alt="Resultado do app para biscoito recheado num perfil alérgico a soja: nota 0 e alerta vermelho Alergia: contém soja" style="width:400px;height:800px;object-fit:cover;border:10px solid #2C3830;border-radius:48px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#5DBB82">Segurança</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#F3F5EF">Alergias levadas a sério</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#F07A63;width:44px;height:44px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#CFDCD2"><b style="color:#F3F5EF">Contém o alérgeno:</b> nota 0 e alerta vermelho no topo.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#E0A64A;width:44px;height:44px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#CFDCD2"><b style="color:#F3F5EF">Pode conter traços:</b> nota máxima 3 e aviso.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#5DBB82;width:44px;height:44px"><path d="M20 6 9 17l-5-5"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#CFDCD2"><b style="color:#F3F5EF">Os principais alérgenos da Anvisa,</b> mais qualquer alergia que o paciente digitar, como morango ou kiwi.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#5DBB82;width:44px;height:44px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#CFDCD2"><b style="color:#F3F5EF">Sem informação no rótulo:</b> o app pede para conferir a embalagem, em vez de liberar.</p></div>
+</div>
+</div>
+
+</section>
+<section id="s-acompanhamento" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">Entre as consultas</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">O paciente acompanha a própria evolução</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:8px;border-left:4px solid #2C7A4B;padding:0 0 0 28px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Diário</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Cada refeição com calorias, macros, fibra e sódio do dia.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;border-left:4px solid #2C7A4B;padding:0 0 0 28px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Progresso de 7, 15 e 30 dias</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Percentual médio da meta em cada nutriente e gráfico dia a dia.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;border-left:4px solid #2C7A4B;padding:0 0 0 28px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Peso e gasto real</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Com 2 semanas de diário e pesagens, o app estima o gasto calórico real do paciente.</p></div>
+</div>
+</div>
+<img src="/apresentacao/progresso.png" alt="Tela de progresso de 7 dias: dias registrados, percentual médio da meta e barras por nutriente" style="width:400px;height:800px;object-fit:cover;border:10px solid #16201A;border-radius:48px">
+
+</section>
+<section id="s-metas" class="slide" data-transition="fade" style="background:#E2F0E6;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<img src="/apresentacao/metas.png" alt="Tela de metas diárias personalizadas, com campos de calorias, proteína, carboidrato, gordura, fibra e sódio" style="width:400px;height:800px;object-fit:cover;border:10px solid #16201A;border-radius:48px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#1F5C38">Você no controle</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">O app segue a sua prescrição</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#1F5C38;width:44px;height:44px"><path d="M4 21v-7M4 10V3M12 21v-9M12 8V3M20 21v-5M20 12V3M1 14h6M9 8h6M17 16h6"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#33403A"><b style="color:#16201A">Metas personalizadas:</b> o paciente digita as metas que você passou. Notas, diário e progresso passam a seguir esses números.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#1F5C38;width:44px;height:44px"><path d="M22 2 11 13"/><path d="M22 2 15 22 11 13 2 9 22 2z"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#33403A"><b style="color:#16201A">Relatório para você:</b> resumo de 7, 15 ou 30 dias enviado por WhatsApp ou e-mail.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#1F5C38;width:44px;height:44px"><ellipse cx="12" cy="5" rx="9" ry="3"/><path d="M3 5v14a9 3 0 0 0 18 0V5"/><path d="M3 12a9 3 0 0 0 18 0"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#33403A"><b style="color:#16201A">Planilha do diário:</b> todas as refeições e pesagens em CSV, para abrir no Excel.</p></div>
+</div>
+</div>
+
+</section>
+<section id="s-evidencia" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">Base científica</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">Cálculos alinhados à diretriz atual</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-top:6px solid #2C7A4B;border-radius:24px;padding:36px 40px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Taxa basal em 4 fórmulas</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Mifflin-St Jeor, Harris-Benedict, OMS e Katch-McArdle lado a lado. Você escolhe qual vale.</p></div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-top:6px solid #2C7A4B;border-radius:24px;padding:36px 40px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Piso de segurança</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Nunca abaixo de 1.200 kcal (mulher) ou 1.500 kcal (homem), com déficit de até 1.000 kcal.</p></div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-top:6px solid #2C7A4B;border-radius:24px;padding:36px 40px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Metas da ABESO 2025</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Marcos de 5% e 10% do peso (10% e 15% com IMC 40+) e aviso de platô.</p></div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-top:6px solid #2C7A4B;border-radius:24px;padding:36px 40px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Estilo e qualidade</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Equilibrada, mediterrânea, low-carb ou low-fat, e o % de ultraprocessados do dia.</p></div>
+</div>
+
+</section>
+<section id="s-parceria" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">A proposta</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">Um piloto com os seus pacientes</h2>
+</div>
+<div style="display:grid;grid-template-columns:1fr 1fr;gap:28px">
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:40px"><p style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:44px;font-weight:800;color:#2C7A4B">01</p><h3 style="font-size:36px;font-weight:700;color:#16201A">Indicar o app</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Para 5 a 10 pacientes, durante 30 dias.</p></div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:40px"><p style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:44px;font-weight:800;color:#2C7A4B">02</p><h3 style="font-size:36px;font-weight:700;color:#16201A">Definir as metas</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Cada paciente usa no app as metas que você prescreveu.</p></div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:40px"><p style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:44px;font-weight:800;color:#2C7A4B">03</p><h3 style="font-size:36px;font-weight:700;color:#16201A">Receber os relatórios</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Os pacientes enviam o resumo antes do retorno.</p></div>
+<div style="display:flex;flex-direction:column;gap:12px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:40px"><p style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:44px;font-weight:800;color:#2C7A4B">04</p><h3 style="font-size:36px;font-weight:700;color:#16201A">Dar sua opinião</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">O que ajudou, o que faltou. Em troca: acesso gratuito e destaque como parceiro.</p></div>
+</div>
+
+</section>
+<section id="s-cuidados" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;gap:56px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">Transparência</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">O que o app é, e o que não é</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:32px">
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:44px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:52px;height:52px"><path d="M22 10 12 5 2 10l10 5 10-5z"/><path d="M6 12v5c3 3 9 3 12 0v-5"/></svg>
+<h3 style="font-size:36px;font-weight:700;color:#16201A">Orientação geral</h3>
+<p style="font-size:30px;line-height:1.4;color:#4E5A51">Não substitui a avaliação do nutricionista ou do médico. O app avisa isso ao paciente.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:44px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:52px;height:52px"><path d="M4 19.5v-15A2.5 2.5 0 0 1 6.5 2H20v20H6.5a2.5 2.5 0 0 1 0-5H20"/></svg>
+<h3 style="font-size:36px;font-weight:700;color:#16201A">Fonte de cada número</h3>
+<p style="font-size:30px;line-height:1.4;color:#4E5A51">TACO, Open Food Facts ou leitura por IA. Valores estimados aparecem marcados e podem ser corrigidos.</p>
+</div>
+<div style="flex:1;display:flex;flex-direction:column;gap:20px;background:#FFFFFF;border:1px solid #D9DED4;border-radius:24px;padding:44px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:52px;height:52px"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0 1 10 0v4"/></svg>
+<h3 style="font-size:36px;font-weight:700;color:#16201A">Dados protegidos</h3>
+<p style="font-size:30px;line-height:1.4;color:#4E5A51">Consentimento conforme a LGPD, senha protegida e exclusão da conta pelo próprio paciente.</p>
+</div>
+</div>
+
+</section>
+<section id="s-contato" class="slide" data-transition="fade" style="background:#16201A;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:48px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#5DBB82">Próximo passo</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:100px;font-weight:800;line-height:1.05;letter-spacing:-2px;color:#F3F5EF">Vamos testar com os seus pacientes?</h2>
+<div style="display:flex;flex-direction:row;gap:64px;align-items:start">
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#9AA79D">Experimente agora</p><p style="font-size:36px;font-weight:600;color:#F3F5EF">rotulo-certo-production.up.railway.app</p></div>
+<div style="display:flex;flex-direction:column;gap:8px"><p style="font-size:24px;letter-spacing:2px;text-transform:uppercase;color:#9AA79D">Contato</p><p style="font-size:36px;font-weight:600;color:#F3F5EF">Moisés Silva</p><p style="font-size:36px;font-weight:600;color:#5DBB82"><a href="https://wa.me/5561981191207" style="color:inherit;text-decoration:none">WhatsApp (61) 9 8119-1207</a></p></div>
+</div>
+
+</section>
+</div></main>
+<p id="dica">Vire o celular para ver maior</p>
+<nav id="barra" aria-label="Navegação dos slides">
+  <button id="ant" type="button" aria-label="Slide anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg></button>
+  <span id="conta" aria-live="polite"></span>
+  <button id="prox" type="button" aria-label="Próximo slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></button>
+  <button id="tela" type="button" aria-label="Tela cheia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+</nav>
+<script>
+(() => {
+  const S = [...document.querySelectorAll(".slide")], trilho = document.getElementById("trilho");
+  let i = 0;
+  const ler = () => { const n = parseInt(location.hash.slice(1), 10); return n >= 1 && n <= S.length ? n - 1 : 0; };
+  function ir(n, hist){
+    i = Math.max(0, Math.min(S.length - 1, n));
+    S.forEach((s, k) => { s.classList.toggle("atual", k === i); s.setAttribute("aria-hidden", k !== i); });
+    document.getElementById("conta").textContent = (i + 1) + " / " + S.length;
+    document.getElementById("ant").disabled = i === 0;
+    document.getElementById("prox").disabled = i === S.length - 1;
+    if (hist !== false) history.replaceState(null, "", "#" + (i + 1));
+  }
+  function escala(){ const k = Math.min(innerWidth / 1920, innerHeight / 1080); trilho.style.transform = "translate(-50%,-50%) scale(" + k + ")"; }
+  addEventListener("resize", escala); escala();
+  addEventListener("hashchange", () => ir(ler(), false));
+  document.getElementById("ant").onclick = () => ir(i - 1);
+  document.getElementById("prox").onclick = () => ir(i + 1);
+  document.getElementById("tela").onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {} };
+  addEventListener("keydown", e => {
+    if (["ArrowRight","PageDown"," ","Enter"].includes(e.key)) { e.preventDefault(); ir(i + 1); }
+    else if (["ArrowLeft","PageUp","Backspace"].includes(e.key)) { e.preventDefault(); ir(i - 1); }
+    else if (e.key === "Home") ir(0); else if (e.key === "End") ir(S.length - 1);
+    else if (e.key === "f" || e.key === "F") document.getElementById("tela").click();
+  });
+  let x0 = null, y0 = null;
+  addEventListener("touchstart", e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, {passive:true});
+  addEventListener("touchend", e => {
+    if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) ir(i + (dx < 0 ? 1 : -1));
+  });
+  document.getElementById("palco").addEventListener("click", e => { if (!e.target.closest("a")) ir(i + (e.clientX > innerWidth / 3 ? 1 : -1)); });
+  let t; const mexeu = () => { document.body.classList.remove("quieto"); clearTimeout(t); t = setTimeout(() => document.body.classList.add("quieto"), 2500); };
+  addEventListener("mousemove", mexeu); addEventListener("touchstart", mexeu, {passive:true}); mexeu();
+  ir(ler(), false);
+})();
+</script>
+</body>
+</html>
