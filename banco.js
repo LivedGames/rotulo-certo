@@ -80,11 +80,23 @@ export async function prepararBanco() {
       criado TIMESTAMPTZ NOT NULL DEFAULT now(),
       PRIMARY KEY (codigo, usuario_id)
     );
+    CREATE TABLE IF NOT EXISTS visitas (
+      id BIGSERIAL PRIMARY KEY,
+      dia DATE NOT NULL,
+      tipo TEXT NOT NULL,
+      nome TEXT NOT NULL,
+      visitante TEXT NOT NULL,
+      origem TEXT,
+      valor INT,
+      criado TIMESTAMPTZ NOT NULL DEFAULT now()
+    );
+    CREATE INDEX IF NOT EXISTS visitas_dia_idx ON visitas(dia);
     CREATE INDEX IF NOT EXISTS produtos_status_idx ON produtos(status);
     CREATE INDEX IF NOT EXISTS sessoes_usuario_idx ON sessoes(usuario_id);
   `);
   await q("DELETE FROM sessoes WHERE expira < now()");
   await q("DELETE FROM redefinicoes WHERE expira < now()");
+  await q("DELETE FROM visitas WHERE dia < current_date - 400");
   console.log("Banco pronto: contas e base própria ligadas.");
 }
 
@@ -105,6 +117,7 @@ function senhaConfere(senha, guardado) {
   return esperado.length === h.length && crypto.timingSafeEqual(esperado, h);
 }
 const emailValido = e => typeof e === "string" && e.length <= 200 && /^[^\s@]+@[^\s@]+\.[^\s@]{2,}$/.test(e);
+const SAL_VISITAS = process.env.SAL_VISITAS || crypto.createHash("sha256").update("visitas:" + (URL_BANCO || "")).digest("hex");
 const ipDe = req => String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
 const origemDe = req => process.env.BASE_URL || `${req.headers["x-forwarded-proto"] || "http"}://${req.headers["x-forwarded-host"] || req.headers.host}`;
 
@@ -193,11 +206,25 @@ async function estadoProduto(codigo, usuario) {
 export async function rotasBanco(req, res, url) {
   const p = url.pathname, m = req.method, corpo = req.body || {};
   if (p === "/api/config") return res.json({ contas: temBanco, google: temBanco && GOOGLE_CLIENT_ID ? GOOGLE_CLIENT_ID : null, emailSenha: !!RESEND_API_KEY }), true;
-  if (!p.startsWith("/api/conta") && !p.startsWith("/api/dados") && !p.startsWith("/api/produtos") && !p.startsWith("/api/admin")) return false;
-  if (!temBanco) return res.status(503).json({ erro: "sem_banco", mensagem: "Contas ainda não estão ligadas neste servidor." }), true;
+  if (p !== "/api/visita" && !p.startsWith("/api/conta") && !p.startsWith("/api/dados") && !p.startsWith("/api/produtos") && !p.startsWith("/api/admin")) return false;
+  if (!temBanco) return p === "/api/visita" ? (res.status(204).end(), true) : (res.status(503).json({ erro: "sem_banco", mensagem: "Contas ainda não estão ligadas neste servidor." }), true);
 
   try {
     const ip = ipDe(req);
+    // ---- contador de visitas anônimo: sem cookies, sem guardar IP; o visitante é um código que muda todo dia
+    if (p === "/api/visita" && m === "POST") {
+      const ua = String(req.headers["user-agent"] || "");
+      if (!limitar("visita:" + ip, 300, 3600e3) || /bot|crawl|spider|slurp|headless|lighthouse|preview/i.test(ua)) return res.status(204).end(), true;
+      const nome = String(corpo.evento || corpo.pagina || "");
+      if (!/^[a-z0-9_-]{1,40}$/.test(nome)) return res.status(400).json({ erro: "nome" }), true;
+      const dia = new Date().toLocaleDateString("sv-SE", { timeZone: "America/Sao_Paulo" });
+      const visitante = sha256(`${dia}|${ip}|${ua}|${SAL_VISITAS}`).slice(0, 24);
+      let origem = String(corpo.origem || "").toLowerCase().replace(/[^a-z0-9_.-]/g, "").slice(0, 40) || null;
+      if (/Instagram/.test(ua) && (!origem || origem === "direto")) origem = "instagram";
+      const v = Number(corpo.valor), valor = Number.isFinite(v) ? Math.max(0, Math.min(1000, Math.round(v))) : null;
+      await q("INSERT INTO visitas (dia, tipo, nome, visitante, origem, valor) VALUES ($1, $2, $3, $4, $5, $6)", [dia, corpo.evento ? "evento" : "pagina", nome, visitante, origem, valor]);
+      return res.status(204).end(), true;
+    }
     // ---- criar conta
     if (p === "/api/conta/criar" && m === "POST") {
       if (!limitar("criar:" + ip, 10, 3600e3)) return res.status(429).json({ erro: "muitas_tentativas", mensagem: "Muitas tentativas. Espere um pouco." }), true;
@@ -354,6 +381,24 @@ export async function rotasBanco(req, res, url) {
         const r = (await q(`SELECT (SELECT count(*) FROM usuarios)::int AS usuarios, (SELECT count(*) FROM produtos)::int AS produtos,
           (SELECT count(*) FROM produtos WHERE status = 'revisao')::int AS revisao, (SELECT count(*) FROM produtos WHERE criado > now() - interval '7 days')::int AS novos7`)).rows[0];
         return res.json(r), true;
+      }
+      if (p === "/api/admin/visitas" && m === "GET") {
+        const dias = Math.max(1, Math.min(90, Number(url.searchParams.get("dias")) || 7));
+        const desde = "(now() AT TIME ZONE 'America/Sao_Paulo')::date - ($1::int - 1)";
+        const pd = (n, t = "pagina") => `count(DISTINCT visitante) FILTER (WHERE tipo = '${t}' AND nome = '${n}')::int`;
+        const porDia = (await q(`SELECT to_char(dia, 'YYYY-MM-DD') AS dia, ${pd("app")} AS app, ${pd("apresentacao")} AS apresentacao,
+            ${pd("analisou", "evento")} AS analisaram, ${pd("diario", "evento")} AS diario
+          FROM visitas WHERE dia >= ${desde} GROUP BY dia ORDER BY dia DESC`, [dias])).rows;
+        const soma = k => porDia.reduce((t, d) => t + d[k], 0);
+        const extra = (await q(`SELECT
+            count(*) FILTER (WHERE tipo = 'evento' AND nome = 'instalou')::int AS instalaram,
+            count(DISTINCT visitante) FILTER (WHERE tipo = 'evento' AND nome = 'apresentacao_fim')::int AS viram_tudo,
+            (SELECT round(avg(mx), 1)::float FROM (SELECT max(valor) AS mx FROM visitas WHERE tipo = 'evento' AND nome = 'slides' AND dia >= ${desde} GROUP BY visitante) s) AS slides_media,
+            (SELECT count(*) FROM usuarios WHERE criado >= ${desde})::int AS contas
+          FROM visitas WHERE dia >= ${desde}`, [dias])).rows[0];
+        const origens = (await q(`SELECT coalesce(origem, 'direto') AS origem, nome AS pagina, count(DISTINCT visitante)::int AS pessoas
+          FROM visitas WHERE tipo = 'pagina' AND dia >= ${desde} GROUP BY 1, 2 ORDER BY 3 DESC LIMIT 20`, [dias])).rows;
+        return res.json({ dias, totais: { app: soma("app"), apresentacao: soma("apresentacao"), analisaram: soma("analisaram"), diario: soma("diario"), ...extra }, porDia, origens }), true;
       }
       if (p === "/api/admin/produtos" && m === "GET") {
         const f = url.searchParams.get("filtro");

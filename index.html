@@ -469,6 +469,19 @@ details summary{cursor:pointer;font-weight:600}
       <div class="status" id="contaMsg" hidden></div>
     </div>
 
+    <div class="card" id="visitasCard" hidden>
+      <div class="row" style="justify-content:space-between">
+        <h2>Visitas</h2>
+        <select id="visitasDias" aria-label="Período das visitas" style="width:auto">
+          <option value="1">Hoje</option><option value="7" selected>7 dias</option><option value="30">30 dias</option><option value="90">90 dias</option>
+        </select>
+      </div>
+      <p class="small muted">Contagem anônima, sem cookies: cada pessoa conta uma vez por dia. Visitas de dentro do Claude não entram.</p>
+      <div class="tiles" id="visitasTiles"></div>
+      <p class="small" id="visitasApres"></p>
+      <details class="small"><summary>De onde vieram</summary><div class="tablewrap" id="visitasOrigens"></div></details>
+      <details class="small"><summary>Dia a dia</summary><div class="tablewrap" id="visitasDia"></div></details>
+    </div>
     <div class="card" id="adminCard" hidden>
       <h2>Painel da base de produtos</h2>
       <div class="tiles" id="adminResumo"></div>
@@ -1248,6 +1261,7 @@ function renderResultado(){
   const r = avaliar(atual, p);
   const [fx, fxCor] = faixa(r.nota);
   const k = chave(atual);
+  if (!atual.exemplo && !produtosContados.has(k)){ produtosContados.add(k); registrar({evento:"analisou"}); }
   const isFav = favs.includes(k);
   const naLista = compras.some(c => c.k === k && !c.feito);
   const lista = (arr, cls, vazio) => `<div class="${cls}"><h3>${cls==="pros"?"Pontos positivos":"Pontos negativos"}</h3>${arr.length?`<ul>${arr.map(t=>`<li><span>${esc(t)}</span></li>`).join("")}</ul>`:`<p class="none" style="margin-top:8px">${vazio}</p>`}</div>`;
@@ -1507,7 +1521,7 @@ function adicionarDiario(prod, qtd){
   const nova = prod.nova || (prod.ultra ? 4 : null);
   diario[p.id][dia].push({id:uid(), nome:prod.nome, qtd, liquido:!!prod.liquido, n:{...prod.n}, hora:new Date().toTimeString().slice(0,5),
     ...(nova ? {nova} : {}), ...(prod.refeicao && prod.parte4 != null ? {p4:Math.round(prod.parte4*100)/100} : {})});
-  salvar(); diaOff = 0; renderDiario();
+  salvar(); diaOff = 0; renderDiario(); registrar({evento:"diario"});
   setStatus(`${esc(prod.nome)} adicionado ao diário de hoje de ${esc(p.nome)}. <a href="#diario">Ver diário</a>`, "ok");
   $("status").scrollIntoView({block:"nearest"});
 }
@@ -2615,7 +2629,8 @@ function renderConta(){
     $("excluirSenha").type = sessaoConta.usuario?.temSenha === false ? "text" : "password";
   }
   $("adminCard").hidden = !(logado() && sessaoConta.usuario?.admin);
-  if (!$("adminCard").hidden) carregarAdmin();
+  $("visitasCard").hidden = $("adminCard").hidden;
+  if (!$("adminCard").hidden){ carregarAdmin(); carregarVisitas(); }
   const nota = document.querySelector("#dadosCard > p.small.muted");
   if (nota) nota.textContent = logado() ? "Seus dados estão salvos na sua conta e neste aparelho. O backup continua útil como cópia extra." : "Tudo fica salvo só neste aparelho. Crie uma conta ou faça um backup para não perder o histórico se trocar de celular ou limpar o navegador.";
 }
@@ -2726,6 +2741,50 @@ async function carregarAdmin(){
 }
 $("adminFiltro").onchange = carregarAdmin;
 
+/* painel de visitas (só administradores) */
+async function carregarVisitas(){
+  const r = await apiConta("GET", "/api/admin/visitas?dias=" + $("visitasDias").value);
+  if (r.status !== 200){ $("visitasCard").hidden = true; return; }
+  const t = r.j.totais, n = v => fmt(v || 0, 0);
+  $("visitasTiles").innerHTML = `
+    <div class="tile"><b>${n(t.app)}</b><span>abriram o app</span></div>
+    <div class="tile"><b>${n(t.analisaram)}</b><span>analisaram um produto</span></div>
+    <div class="tile"><b>${n(t.diario)}</b><span>usaram o diário</span></div>
+    <div class="tile"><b>${n(t.apresentacao)}</b><span>viram a apresentação</span></div>
+    <div class="tile"><b>${n(t.contas)}</b><span>contas criadas</span></div>
+    <div class="tile"><b>${n(t.instalaram)}</b><span>instalaram o app</span></div>`;
+  $("visitasApres").textContent = t.apresentacao ? `Na apresentação, as pessoas passaram em média por ${fmt(t.slides_media || 0, 1)} slides; ${n(t.viram_tudo)} ${t.viram_tudo === 1 ? "chegou" : "chegaram"} ao último (contato).` : "";
+  const NOMES = {app:"App", apresentacao:"Apresentação"};
+  $("visitasOrigens").innerHTML = r.j.origens.length ? `<table class="tabdados"><thead><tr><th>Origem</th><th>Página</th><th>Pessoas</th></tr></thead><tbody>${
+    r.j.origens.map(o => `<tr><td>${esc(o.origem)}</td><td>${esc(NOMES[o.pagina] || o.pagina)}</td><td>${n(o.pessoas)}</td></tr>`).join("")}</tbody></table>` : '<p class="none">Nenhuma visita no período.</p>';
+  $("visitasDia").innerHTML = r.j.porDia.length ? `<table class="tabdados"><thead><tr><th>Dia</th><th>App</th><th>Analisaram</th><th>Diário</th><th>Apresentação</th></tr></thead><tbody>${
+    r.j.porDia.map(d => `<tr><td>${dataCurta(d.dia)}</td><td>${n(d.app)}</td><td>${n(d.analisaram)}</td><td>${n(d.diario)}</td><td>${n(d.apresentacao)}</td></tr>`).join("")}</tbody></table>` : '<p class="none">Nenhuma visita no período.</p>';
+}
+$("visitasDias").onchange = carregarVisitas;
+
+/* contador de visitas: só no servidor do app, sem cookies */
+const origemVisita = (() => { try {
+  const u = new URL(location.href), o = u.searchParams.get("o") || u.searchParams.get("utm_source");
+  if (o) return o;
+  const ua = navigator.userAgent;
+  if (/Instagram/.test(ua)) return "instagram";
+  if (/FBAN|FBAV/.test(ua)) return "facebook";
+  if (matchMedia("(display-mode: standalone)").matches) return "app-instalado";
+  const r = document.referrer ? new URL(document.referrer).hostname : "";
+  if (!r || r === location.hostname) return "direto";
+  return r.replace(/^(www|l|m|lm)\./, "").split(".")[0];
+} catch(e){ return null; } })();
+let visitasLigadas = false;
+const produtosContados = new Set();
+function registrar(dados){
+  if (!visitasLigadas) return;
+  try{
+    const corpo = JSON.stringify({...dados, origem:origemVisita});
+    if (navigator.sendBeacon && navigator.sendBeacon("/api/visita", new Blob([corpo], {type:"application/json"}))) return;
+    fetch("/api/visita", {method:"POST", body:corpo, headers:{"Content-Type":"application/json"}, keepalive:true}).catch(() => {});
+  }catch(e){}
+}
+
 /* base própria: buscar, cadastrar e avaliar produtos */
 async function buscarNaBase(code){
   if (!servidorContas) return null;
@@ -2767,6 +2826,7 @@ function baseHTML(prod){
     const r = await fetch("/api/config", {headers:{Accept:"application/json"}});
     const c = r.ok ? await r.json() : null;
     servidorContas = !!c?.contas;
+    if (c){ visitasLigadas = true; registrar({pagina:"app"}); }
     if (c && !c.contas) $("contaSemServidor").textContent = "As contas ainda não estão ligadas neste servidor: falta adicionar o banco de dados PostgreSQL no Railway. Enquanto isso, seus dados ficam só neste aparelho; use o backup abaixo.";
     if (servidorContas && c.google) prepararGoogle(c.google);
   }catch(e){ servidorContas = false; }
@@ -2804,7 +2864,7 @@ $("instalarBtn").onclick = async () => {
   if (r?.outcome === "accepted") $("instalarCard").hidden = true;
 };
 $("instalarFechar").onclick = () => { $("instalarCard").hidden = true; store.set("rc2.instalarFechado", true); };
-window.addEventListener("appinstalled", () => { $("instalarCard").hidden = true; });
+window.addEventListener("appinstalled", () => { $("instalarCard").hidden = true; registrar({evento:"instalou"}); });
 
 /* ---------- navegação ---------- */
 const VIEWS = ["analisar","diario","listas","progresso","perfil"];

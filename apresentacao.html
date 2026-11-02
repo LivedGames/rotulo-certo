@@ -253,12 +253,20 @@ body.quieto #barra{opacity:0}
 <script>
 (() => {
   const S = [...document.querySelectorAll(".slide")], trilho = document.getElementById("trilho");
-  let i = 0;
+  let i = 0, maior = 0, fimContado = false;
+  const origem = (() => { try { const u = new URL(location.href), o = u.searchParams.get("o") || u.searchParams.get("utm_source"); if (o) return o;
+    if (/Instagram/.test(navigator.userAgent)) return "instagram"; const r = document.referrer ? new URL(document.referrer).hostname : "";
+    return !r || r === location.hostname ? "direto" : r.replace(/^(www|l|m|lm)\./, "").split(".")[0]; } catch (e) { return null; } })();
+  function registrar(d){ try { const b = JSON.stringify({...d, origem}); if (!(navigator.sendBeacon && navigator.sendBeacon("/api/visita", new Blob([b], {type:"application/json"})))) fetch("/api/visita", {method:"POST", body:b, headers:{"Content-Type":"application/json"}, keepalive:true}).catch(() => {}); } catch (e) {} }
+  registrar({pagina:"apresentacao"});
+  addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") registrar({evento:"slides", valor:maior + 1}); });
   const ler = () => { const n = parseInt(location.hash.slice(1), 10); return n >= 1 && n <= S.length ? n - 1 : 0; };
   function ir(n, hist){
     i = Math.max(0, Math.min(S.length - 1, n));
     S.forEach((s, k) => { s.classList.toggle("atual", k === i); s.setAttribute("aria-hidden", k !== i); });
     document.getElementById("conta").textContent = (i + 1) + " / " + S.length;
+    maior = Math.max(maior, i);
+    if (i === S.length - 1 && !fimContado){ fimContado = true; registrar({evento:"apresentacao_fim"}); }
     document.getElementById("ant").disabled = i === 0;
     document.getElementById("prox").disabled = i === S.length - 1;
     if (hist !== false) history.replaceState(null, "", "#" + (i + 1));
