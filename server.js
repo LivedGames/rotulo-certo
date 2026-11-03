@@ -5,7 +5,7 @@ import http from "node:http";
 import { readFile } from "node:fs/promises";
 import { fileURLToPath } from "node:url";
 import path from "node:path";
-import { rotasBanco, prepararBanco, limitar, temBanco } from "./banco.js";
+import { rotasBanco, prepararBanco, limitar, temBanco, usuarioDe } from "./banco.js";
 
 const PASTA = path.dirname(fileURLToPath(import.meta.url));
 const PORTA = Number(process.env.PORT) || 3000;
@@ -247,6 +247,11 @@ http.createServer(async (req, res) => {
         // limite por aparelho para proteger a cota da IA
         const ip = String(req.headers["x-forwarded-for"] || req.socket.remoteAddress || "").split(",")[0].trim();
         if (!limitar("ia:" + ip, Number(process.env.LIMITE_IA_HORA) || 40, 3600e3)) return res.status(429).json({ erro: "rate_limited", detalhe: "Limite de leituras por hora deste aparelho." });
+        // com contas ligadas, só quem entrou na conta usa a IA
+        if (temBanco) {
+          let u = null; try { u = await usuarioDe(req); } catch {}
+          if (!u) return res.status(401).json({ erro: "sem_login", detalhe: "Entre na sua conta para usar a leitura por IA." });
+        }
         return url.pathname === "/api/alimentos" ? estimarAlimentos(req, res) : lerRotulo(req, res);
       }
       if (await rotasBanco(req, res, url)) return;

@@ -137,7 +137,7 @@ async function criarSessao(usuarioId) {
   await q("INSERT INTO sessoes (token_hash, usuario_id, expira) VALUES ($1, $2, now() + $3::interval)", [sha256(token), usuarioId, `${DIAS_SESSAO} days`]);
   return token;
 }
-async function usuarioDe(req) {
+export async function usuarioDe(req) {
   const m = String(req.headers.authorization || "").match(/^Bearer\s+(\S+)$/i);
   if (!m) return null;
   const r = await q(`SELECT u.* FROM sessoes s JOIN usuarios u ON u.id = s.usuario_id WHERE s.token_hash = $1 AND s.expira > now()`, [sha256(m[1])]);
@@ -399,6 +399,12 @@ export async function rotasBanco(req, res, url) {
         const origens = (await q(`SELECT coalesce(origem, 'direto') AS origem, nome AS pagina, count(DISTINCT visitante)::int AS pessoas
           FROM visitas WHERE tipo = 'pagina' AND dia >= ${desde} GROUP BY 1, 2 ORDER BY 3 DESC LIMIT 20`, [dias])).rows;
         return res.json({ dias, totais: { app: soma("app"), apresentacao: soma("apresentacao"), analisaram: soma("analisaram"), diario: soma("diario"), ...extra }, porDia, origens }), true;
+      }
+      if (p === "/api/admin/contas" && m === "GET") {
+        const r = await q(`SELECT u.nome, u.email, u.criado, (u.google_sub IS NOT NULL) AS google, (u.senha_hash IS NOT NULL) AS senha, d.atualizado AS ultimo_uso
+          FROM usuarios u LEFT JOIN dados_usuario d ON d.usuario_id = u.id ORDER BY u.criado DESC LIMIT 500`);
+        const t = (await q("SELECT count(*)::int AS n FROM usuarios")).rows[0].n;
+        return res.json({ total: t, contas: r.rows }), true;
       }
       if (p === "/api/admin/produtos" && m === "GET") {
         const f = url.searchParams.get("filtro");

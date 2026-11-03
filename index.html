@@ -215,6 +215,9 @@ details summary{cursor:pointer;font-weight:600}
 .tabdados th:first-child,.tabdados td:first-child{text-align:left}
 @media (max-width:440px){.procon{grid-template-columns:1fr}.targets{grid-template-columns:1fr 1fr}.grid3{grid-template-columns:1fr 1fr}.tabs a{font-size:.74rem;padding:7px 2px}.tile b{font-size:1.15rem}}
 @media (prefers-reduced-motion:no-preference){.dial{transition:background .4s}.barra .enche{transition:width .4s}}
+body.bloqueado .tabs,body.bloqueado .panel,body.bloqueado #instalarCard{display:none!important}
+#portao:not([hidden]){display:flex;flex-direction:column;gap:14px}
+#portao ul{margin:0;padding-left:1.2em;display:flex;flex-direction:column;gap:4px}
 </style>
 
 <div class="wrap">
@@ -231,6 +234,21 @@ details summary{cursor:pointer;font-weight:600}
       <a href="#perfil" id="tab-perfil">Perfil</a>
     </nav>
   </header>
+
+  <section id="portao" hidden aria-labelledby="portaoTitulo">
+    <div class="card">
+      <h2 id="portaoTitulo">Bem-vindo ao Rótulo Certo</h2>
+      <p class="muted">Entre ou crie sua conta grátis para usar o app.</p>
+      <ul class="small">
+        <li>Nota de 0 a 10 para cada alimento, calculada para a sua meta</li>
+        <li>Foto do rótulo, código de barras ou a refeição digitada</li>
+        <li>Diário, metas e progresso salvos na conta, em qualquer aparelho</li>
+      </ul>
+      <p class="status err" id="portaoSemNet" hidden>Sem conexão com o servidor. Conecte-se à internet para entrar.</p>
+    </div>
+    <div id="portaoConta"></div>
+    <p class="small muted" style="text-align:center">Nutricionista ou personal trainer? <a href="/apresentacao?o=entrada">Veja a apresentação</a></p>
+  </section>
 
   <form class="card" id="redefinirCard" hidden autocomplete="off">
     <h2>Criar nova senha</h2>
@@ -481,6 +499,15 @@ details summary{cursor:pointer;font-weight:600}
       <p class="small" id="visitasApres"></p>
       <details class="small"><summary>De onde vieram</summary><div class="tablewrap" id="visitasOrigens"></div></details>
       <details class="small"><summary>Dia a dia</summary><div class="tablewrap" id="visitasDia"></div></details>
+    </div>
+    <div class="card" id="contasCard" hidden>
+      <div class="row" style="justify-content:space-between">
+        <h2 id="contasTitulo">Contas criadas</h2>
+        <button class="btn sm" type="button" id="contasBaixar">Baixar lista (CSV)</button>
+      </div>
+      <input type="text" id="contasBusca" placeholder="Buscar por nome ou e-mail" aria-label="Buscar conta">
+      <div class="tablewrap" id="contasLista"></div>
+      <p class="small muted">Dados pessoais: use só para falar com quem se cadastrou e não compartilhe a lista.</p>
     </div>
     <div class="card" id="adminCard" hidden>
       <h2>Painel da base de produtos</h2>
@@ -2091,7 +2118,7 @@ async function lerRotulo(files){
   const imagens = [];
   for (const f of files.slice(0, 3)) imagens.push(await reduzirFoto(f));
   let res;
-  try{ res = await fetch("api/ler-rotulo", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({imagens})}); }
+  try{ res = await fetch("api/ler-rotulo", {method:"POST", headers:cabecalhosIA(), body: JSON.stringify({imagens})}); }
   catch(e){ throw {code:"sem_servidor"}; }
   if (res.status === 404 || res.status === 405) throw {code:"sem_servidor"};
   let j = null; try{ j = await res.json(); }catch(e){}
@@ -2135,6 +2162,7 @@ async function processarFotos(files){
   }catch(err){
     const msgs = {not_granted:"Você não permitiu o uso do Claude nesta página. Digite os valores do rótulo.",
       rate_limited:"O limite de leituras foi atingido. Espere um pouco e tente de novo, ou digite os valores.",
+      sem_login:"Sua sessão expirou. Saia e entre de novo na sua conta (aba Perfil) para usar a leitura por foto.",
       image_rejected:"Essa imagem não pôde ser usada. Tente outra foto (JPG ou PNG).",
       invalid_json:"A leitura veio incompleta. Tente de novo com uma foto mais nítida.",
       sem_servidor:"A leitura por foto precisa do servidor do Rótulo Certo, e este site só tem a página. Publique também o server.js e configure a chave GROQ_API_KEY. Enquanto isso, digite os valores do rótulo.",
@@ -2168,7 +2196,7 @@ async function estimarIA(textos){
     d = await sample.json(PROMPT_ALIMENTOS + textos.map((t,i) => `${i+1}. ${t}`).join("\n"), {modelTier:"quick"});
   } else {
     let res;
-    try{ res = await fetch("api/alimentos", {method:"POST", headers:{"Content-Type":"application/json"}, body: JSON.stringify({itens:textos})}); }
+    try{ res = await fetch("api/alimentos", {method:"POST", headers:cabecalhosIA(), body: JSON.stringify({itens:textos})}); }
     catch(e){ throw {code:"sem_servidor"}; }
     if (res.status === 404 || res.status === 405) throw {code:"sem_servidor"};
     let j = null; try{ j = await res.json(); }catch(e){}
@@ -2196,7 +2224,7 @@ async function interpretarItens(pedacos){
       const naoAchou = faltam.length - ia.length;
       setStatus(naoAchou > 0 ? `Não consegui identificar ${naoAchou} item(ns). Confira a lista de ingredientes.` : "", naoAchou > 0 ? "err" : "");
     }catch(err){
-      const motivo = {sem_servidor:"a estimativa por IA precisa do servidor do app", rate_limited:"o limite de uso da IA foi atingido", not_granted:"o uso do Claude não foi permitido"}[err?.code] || "a IA não respondeu";
+      const motivo = {sem_servidor:"a estimativa por IA precisa do servidor do app", rate_limited:"o limite de uso da IA foi atingido", sem_login:"é preciso entrar de novo na conta", not_granted:"o uso do Claude não foi permitido"}[err?.code] || "a IA não respondeu";
       setStatus(`Não reconheci: ${esc(faltam.join(", "))} (${motivo}). Escreva de outro jeito, use “Digitar valores” ou fotografe o rótulo.`, "err");
     }
   } else setStatus("");
@@ -2523,6 +2551,11 @@ var syncVersao = store.get("rc2.syncVersao", 0);
 var syncSujo = store.get("rc2.syncSujo", false);
 var syncTimer = null, syncEnviando = false, servidorContas = null, codigoPendente = null;
 function logado(){ return !!(sessaoConta && sessaoConta.token); }
+function cabecalhosIA(){
+  const h = {"Content-Type":"application/json"};
+  if (logado()) h.Authorization = "Bearer " + sessaoConta.token;
+  return h;
+}
 async function apiConta(metodo, caminho, corpo){
   const h = {"Content-Type":"application/json"};
   if (logado()) h.Authorization = "Bearer " + sessaoConta.token;
@@ -2613,11 +2646,28 @@ function encerrarSessaoLocal(apagarDados){
   renderConta();
 }
 async function aposEntrar(j, texto){
-  guardarSessao({token:j.token, usuario:j.usuario}); syncVersao = 0; store.set("rc2.syncVersao", 0);
+  guardarSessao({token:j.token, usuario:j.usuario}); syncVersao = 0; store.set("rc2.syncVersao", 0); store.set("rc2.jaEntrou", true);
   $("cSenha").value = ""; renderConta(); msgConta(texto, "ok");
   await puxarDados(true);
 }
 
+/* tela de entrada: no app publicado, só usa quem entrou na conta */
+const ehArtefato = location.protocol === "file:" || /claude|anthropic/.test(location.hostname);
+let configContas = null, configTentada = false;
+function atualizarPortao(){
+  const bloquear = !ehArtefato && !logado() && configContas !== false;
+  document.body.classList.toggle("bloqueado", bloquear);
+  $("portao").hidden = !bloquear;
+  $("portaoSemNet").hidden = !(bloquear && configTentada && configContas === null);
+  const card = $("contaCard");
+  if (bloquear && card.parentElement.id !== "portaoConta"){
+    $("portaoConta").append(card);
+    if (!store.get("rc2.jaEntrou", false)) trocarModo(true);
+  } else if (!bloquear && card.parentElement.id === "portaoConta"){
+    $("view-perfil").prepend(card);
+    if (location.hash === "#perfil" || !location.hash) rota();
+  }
+}
 function renderConta(){
   const semServ = servidorContas === false;
   $("contaSemServidor").hidden = !semServ;
@@ -2629,8 +2679,9 @@ function renderConta(){
     $("excluirSenha").type = sessaoConta.usuario?.temSenha === false ? "text" : "password";
   }
   $("adminCard").hidden = !(logado() && sessaoConta.usuario?.admin);
-  $("visitasCard").hidden = $("adminCard").hidden;
-  if (!$("adminCard").hidden){ carregarAdmin(); carregarVisitas(); }
+  $("visitasCard").hidden = $("contasCard").hidden = $("adminCard").hidden;
+  if (!$("adminCard").hidden){ carregarAdmin(); carregarVisitas(); carregarContas(); }
+  atualizarPortao();
   const nota = document.querySelector("#dadosCard > p.small.muted");
   if (nota) nota.textContent = logado() ? "Seus dados estão salvos na sua conta e neste aparelho. O backup continua útil como cópia extra." : "Tudo fica salvo só neste aparelho. Crie uma conta ou faça um backup para não perder o histórico se trocar de celular ou limpar o navegador.";
 }
@@ -2762,6 +2813,30 @@ async function carregarVisitas(){
 }
 $("visitasDias").onchange = carregarVisitas;
 
+/* lista de contas criadas (só administradores) */
+let contasAdmin = [];
+const dataHora = iso => { if (!iso) return "–"; const d = new Date(iso); return d.toLocaleDateString("pt-BR") + " " + d.toTimeString().slice(0,5); };
+async function carregarContas(){
+  const r = await apiConta("GET", "/api/admin/contas");
+  if (r.status !== 200){ $("contasCard").hidden = true; return; }
+  contasAdmin = r.j.contas || [];
+  $("contasTitulo").textContent = `Contas criadas (${fmt(r.j.total,0)})`;
+  mostrarContas();
+}
+function mostrarContas(){
+  const b = $("contasBusca").value.trim().toLowerCase();
+  const lista = contasAdmin.filter(c => !b || (c.email + " " + (c.nome || "")).toLowerCase().includes(b));
+  $("contasLista").innerHTML = lista.length ? `<table class="tabdados"><thead><tr><th>Nome e e-mail</th><th>Criada</th><th>Último uso</th></tr></thead><tbody>${
+    lista.map(c => `<tr><td><b>${esc(c.nome || "(sem nome)")}</b><br><a href="mailto:${esc(c.email)}">${esc(c.email)}</a><br><span class="muted">${c.google ? "Google" : "e-mail e senha"}</span></td><td>${dataHora(c.criado)}</td><td>${dataHora(c.ultimo_uso)}</td></tr>`).join("")}</tbody></table>`
+    : `<p class="none">${contasAdmin.length ? "Nenhuma conta com essa busca." : "Nenhuma conta criada ainda."}</p>`;
+}
+$("contasBusca").addEventListener("input", mostrarContas);
+$("contasBaixar").onclick = () => {
+  const cel = c => /[;"\n]/.test(String(c)) ? `"${String(c).replace(/"/g, '""')}"` : String(c);
+  const linhas = [["Nome","E-mail","Login","Criada","Último uso"], ...contasAdmin.map(c => [c.nome || "", c.email, c.google ? "Google" : "E-mail e senha", dataHora(c.criado), dataHora(c.ultimo_uso)])];
+  baixarArquivo(`rotulo-certo-contas-${hojeISO(0)}.csv`, "\ufeff" + linhas.map(l => l.map(cel).join(";")).join("\r\n") + "\r\n", "text/csv");
+};
+
 /* contador de visitas: só no servidor do app, sem cookies */
 const origemVisita = (() => { try {
   const u = new URL(location.href), o = u.searchParams.get("o") || u.searchParams.get("utm_source");
@@ -2826,10 +2901,12 @@ function baseHTML(prod){
     const r = await fetch("/api/config", {headers:{Accept:"application/json"}});
     const c = r.ok ? await r.json() : null;
     servidorContas = !!c?.contas;
+    configContas = c ? !!c.contas : null;
     if (c){ visitasLigadas = true; registrar({pagina:"app"}); }
     if (c && !c.contas) $("contaSemServidor").textContent = "As contas ainda não estão ligadas neste servidor: falta adicionar o banco de dados PostgreSQL no Railway. Enquanto isso, seus dados ficam só neste aparelho; use o backup abaixo.";
     if (servidorContas && c.google) prepararGoogle(c.google);
-  }catch(e){ servidorContas = false; }
+  }catch(e){ servidorContas = null; }
+  configTentada = true;
   renderConta(); prepararRedefinir();
   if (servidorContas && logado()){
     const eu = await apiConta("GET", "/api/conta/eu");
@@ -2881,7 +2958,7 @@ function rota(){
 window.addEventListener("hashchange", rota);
 
 function tudo(){ renderPerfisUI(); preencherPerfil(); renderResultado(); renderHist(); renderListas(); renderDiario(); renderProgresso(); }
-tudo(); rota();
+tudo(); rota(); atualizarPortao();
 })();
 </script>
 
