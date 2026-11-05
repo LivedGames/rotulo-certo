@@ -149,7 +149,7 @@ textarea{resize:vertical;min-height:64px;line-height:1.4}
 .comi input{width:90px}
 /* listas */
 .lista{display:flex;flex-direction:column;gap:6px}
-.item{display:grid;grid-template-columns:40px 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:500 .9rem var(--f-body);color:var(--ink);text-align:left}
+.item{display:grid;grid-template-columns:44px 1fr auto;gap:10px;align-items:center;background:var(--surface);border:1px solid var(--line);border-radius:10px;padding:8px 10px;font:500 .9rem var(--f-body);color:var(--ink);text-align:left}
 button.item{cursor:pointer;width:100%}
 .hrow{display:grid;grid-template-columns:1fr auto;gap:4px;align-items:center}
 .hrow > .item{min-width:0}
@@ -173,7 +173,8 @@ button.item{cursor:pointer;width:100%}
 .dia-data{all:unset;cursor:pointer;border-radius:8px;padding:2px 6px}
 .dia-data:hover,.dia-data:focus-visible{background:var(--bg)}
 .comi-dia{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
-.comi-dia select,.comi-dia input{width:auto;flex:0 1 auto}
+.comi-dia select{width:auto;flex:1 1 0;min-width:0}
+.comi-dia input{width:auto;flex:1 1 100%}
 .rapido{display:flex;flex-wrap:wrap;gap:6px}
 .barras{display:flex;flex-direction:column;gap:12px}
 .barra .lab{display:flex;justify-content:space-between;gap:8px;font-size:.86rem;margin-bottom:5px}
@@ -1347,7 +1348,8 @@ function renderResultado(){
         <span class="small muted">em</span>
         <select id="comiDia" aria-label="Dia em que comeu">${opcoesDia(alvoDia())}</select>
         <input type="date" id="comiData" max="${hojeISO(0)}" value="${alvoDia()}" aria-label="Outra data" ${opcaoFixa(alvoDia()) ? "hidden" : ""}>
-        <input type="time" id="comiHora" aria-label="Hora" value="${alvoDia() === hojeISO(0) ? new Date().toTimeString().slice(0,5) : ""}">
+        <span class="small muted">no</span>
+        <select id="comiRef" aria-label="Refeição">${REFEICOES.map(([k, l]) => `<option value="${k}"${k === refeicaoAgora() ? " selected" : ""}>${l}</option>`).join("")}</select>
       </div>
     </form>
     ${atual.refeicao ? "" : `<div><h3 style="margin-bottom:8px">Aditivos</h3>${aditHTML}</div>`}
@@ -1392,12 +1394,11 @@ function renderResultado(){
     if (!q || q <= 0){ $("comiQtd").focus(); return; }
     const dia = $("comiDia").value === "outro" ? $("comiData").value : $("comiDia").value;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || dia > hojeISO(0)){ $("comiData").hidden = false; $("comiData").focus(); setStatus("Escolha uma data até hoje.", "err"); return; }
-    adicionarDiario(atual, q, dia, $("comiHora").value);
+    adicionarDiario(atual, q, dia, $("comiRef").value);
   };
   $("comiDia").onchange = () => {
     const outro = $("comiDia").value === "outro";
     $("comiData").hidden = !outro; if (outro) $("comiData").focus();
-    if ($("comiDia").value === hojeISO(0) && !$("comiHora").value) $("comiHora").value = new Date().toTimeString().slice(0,5);
   };
 }
 
@@ -1578,13 +1579,22 @@ function opcoesDia(sel){
   return fixos.map(([v, l]) => `<option value="${v}"${v === sel ? " selected" : ""}>${l}</option>`).join("")
     + `<option value="outro"${opcaoFixa(sel) ? "" : " selected"}>Outro dia…</option>`;
 }
-function adicionarDiario(prod, qtd, dia = hojeISO(0), hora = ""){
+/* refeições do dia: nome, nome curto e horário usado para ordenar */
+const REFEICOES = [["cafe","Café da manhã","Café","07:00"],["almoco","Almoço","Almoço","12:00"],["lanche","Lanche","Lanche","16:00"],["jantar","Jantar","Jantar","19:30"],["ceia","Ceia","Ceia","22:00"]];
+function refeicaoAgora(hora){
+  const [hh, mm] = (hora || new Date().toTimeString().slice(0,5)).split(":").map(Number);
+  const h = hh + (mm || 0) / 60;
+  return h < 10.5 ? "cafe" : h < 15 ? "almoco" : h < 18.5 ? "lanche" : h < 21.5 ? "jantar" : "ceia";
+}
+function adicionarDiario(prod, qtd, dia = hojeISO(0), ref = refeicaoAgora()){
   const p = perfil();
-  if (dia === hojeISO(0) && !hora) hora = new Date().toTimeString().slice(0,5);
+  const R = REFEICOES.find(r => r[0] === ref) || REFEICOES.find(r => r[0] === refeicaoAgora());
+  ref = R[0];
+  const hora = dia === hojeISO(0) && ref === refeicaoAgora() ? new Date().toTimeString().slice(0,5) : R[3];
   diario[p.id] = diario[p.id] || {};
   diario[p.id][dia] = diario[p.id][dia] || [];
   const nova = prod.nova || (prod.ultra ? 4 : null);
-  diario[p.id][dia].push({id:uid(), nome:prod.nome, qtd, liquido:!!prod.liquido, n:{...prod.n}, hora: hora || "",
+  diario[p.id][dia].push({id:uid(), nome:prod.nome, qtd, liquido:!!prod.liquido, n:{...prod.n}, hora, ref,
     ...(nova ? {nova} : {}), ...(prod.refeicao && prod.parte4 != null ? {p4:Math.round(prod.parte4*100)/100} : prod.p4 != null ? {p4:prod.p4} : {})});
   diario[p.id][dia].sort((a, b) => (a.hora || "99") < (b.hora || "99") ? -1 : (a.hora || "99") > (b.hora || "99") ? 1 : 0);
   salvar(); diaOff = offDe(dia); renderDiario(); registrar({evento:"diario"});
@@ -1614,7 +1624,7 @@ function renderDiario(){
   $("diaRapido").innerHTML = rec.map((it, i) => `<button class="chip" type="button" data-rap="${i}" title="${esc(it.nome)}">+ ${esc(it.nome.length > 28 ? it.nome.slice(0, 27) + "…" : it.nome)} <span class="muted">${fmt(it.qtd,0)} ${it.liquido ? "ml" : "g"}</span></button>`).join("");
   $("diaRapido").querySelectorAll("button[data-rap]").forEach(b => b.onclick = () => {
     const it = rec[+b.dataset.rap];
-    adicionarDiario({nome:it.nome, liquido:it.liquido, n:it.n, nova:it.nova, p4:it.p4}, it.qtd, dia, "");
+    adicionarDiario({nome:it.nome, liquido:it.liquido, n:it.n, nova:it.nova, p4:it.p4}, it.qtd, dia, it.ref || refeicaoAgora());
     setStatus(`${esc(it.nome)} adicionado ao diário de ${esc(nomeDia(dia))}.`, "ok");
   });
   $("diaPerfil").textContent = `Diário de ${p.nome}`;
@@ -1631,7 +1641,9 @@ function renderDiario(){
   mostrarUltra($("diaUltra"), [itens], "do dia");
   $("diaLista").innerHTML = itens.length ? itens.map(it => {
     const kcal = num(it.n.kcal);
-    return `<div class="item"><span class="small muted" style="text-align:center">${esc(it.hora)}</span><span class="nm">${esc(it.nome)} <span class="muted small">· ${fmt(it.qtd,0)} ${it.liquido?"ml":"g"}${kcal!=null?` · ${fmt(kcal*it.qtd/100,0)} kcal`:""}</span></span><button class="x" type="button" data-id="${it.id}" aria-label="Remover ${esc(it.nome)}">×</button></div>`;
+    const ref = it.ref || (/^\d{2}:\d{2}$/.test(it.hora || "") ? refeicaoAgora(it.hora) : null);
+    const rotulo = ref ? (REFEICOES.find(r => r[0] === ref) || [])[2] : "";
+    return `<div class="item"><span class="small muted" style="text-align:center;font-size:.72rem;line-height:1.15;overflow-wrap:anywhere">${esc(rotulo || "")}</span><span class="nm">${esc(it.nome)} <span class="muted small">· ${fmt(it.qtd,0)} ${it.liquido?"ml":"g"}${kcal!=null?` · ${fmt(kcal*it.qtd/100,0)} kcal`:""}</span></span><button class="x" type="button" data-id="${it.id}" aria-label="Remover ${esc(it.nome)}">×</button></div>`;
   }).join("") : `<p class="none">Nada registrado ${diaOff === 0 ? "hoje" : "neste dia"}. Toque em “+ Adicionar” ou repita algo abaixo.</p>`;
   $("diaLista").querySelectorAll("button[data-id]").forEach(b => b.onclick = () => {
     diario[p.id][dia] = diario[p.id][dia].filter(x => x.id !== b.dataset.id); salvar(); renderDiario();
