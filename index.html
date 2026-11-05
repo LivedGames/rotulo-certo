@@ -79,7 +79,7 @@ label.btn{position:relative}
 label.btn input{position:absolute;width:1px;height:1px;opacity:0}
 .row{display:flex;gap:8px;flex-wrap:wrap;align-items:center}
 .row > *{min-width:0}
-input[type=text],input[type=number],select,textarea{font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%}
+input[type=text],input[type=number],input[type=date],input[type=time],select,textarea{font:500 .95rem var(--f-body);color:var(--ink);background:var(--bg);border:1px solid var(--line);border-radius:9px;padding:9px 10px;width:100%}
 textarea{resize:vertical;min-height:64px;line-height:1.4}
 .ingr{display:flex;flex-direction:column;gap:6px}
 .ing{display:grid;grid-template-columns:1fr 78px auto auto;gap:8px;align-items:center;background:var(--bg);border-radius:9px;padding:6px 8px}
@@ -170,6 +170,11 @@ button.item{cursor:pointer;width:100%}
 .targets span{font-size:.75rem;color:var(--muted)}
 .dia-nav{display:flex;align-items:center;justify-content:space-between;gap:8px}
 .dia-nav b{font-family:var(--f-display);font-size:1.05rem;text-transform:capitalize}
+.dia-data{all:unset;cursor:pointer;border-radius:8px;padding:2px 6px}
+.dia-data:hover,.dia-data:focus-visible{background:var(--bg)}
+.comi-dia{display:flex;flex-wrap:wrap;gap:8px;align-items:center;width:100%}
+.comi-dia select,.comi-dia input{width:auto;flex:0 1 auto}
+.rapido{display:flex;flex-wrap:wrap;gap:6px}
 .barras{display:flex;flex-direction:column;gap:12px}
 .barra .lab{display:flex;justify-content:space-between;gap:8px;font-size:.86rem;margin-bottom:5px}
 .barra .lab span:last-child{font-variant-numeric:tabular-nums;color:var(--muted)}
@@ -373,15 +378,19 @@ body.bloqueado .tabs,body.bloqueado .panel,body.bloqueado #instalarCard{display:
     <div class="card">
       <div class="dia-nav">
         <button class="btn sm" type="button" id="diaAnt" aria-label="Dia anterior">‹</button>
-        <div style="text-align:center"><b id="diaNome"></b><p class="small muted" id="diaPerfil"></p></div>
+        <div style="text-align:center"><button type="button" class="dia-data" id="diaEscolher" aria-label="Escolher outra data"><b id="diaNome"></b> <span aria-hidden="true">▾</span></button><input type="date" id="diaData" hidden aria-label="Data do diário"><p class="small muted" id="diaPerfil"></p></div>
         <button class="btn sm" type="button" id="diaProx" aria-label="Próximo dia">›</button>
       </div>
       <div class="barras" id="barras"></div>
       <p class="small" id="diaUltra" hidden></p>
     </div>
     <div class="card">
-      <h3>O que você comeu</h3>
+      <div class="row" style="justify-content:space-between"><h3>O que você comeu</h3><button class="btn sm primary" type="button" id="diaAdicionar">+ Adicionar</button></div>
       <div class="lista" id="diaLista"></div>
+      <div id="diaRapidoBox" hidden>
+        <p class="small muted" style="margin:10px 0 6px">Repetir algo que você já comeu (toque para adicionar <span id="diaRapidoQuando">hoje</span>):</p>
+        <div class="rapido" id="diaRapido"></div>
+      </div>
     </div>
   </section>
 
@@ -1334,6 +1343,12 @@ function renderResultado(){
       <input type="number" id="comiQtd" min="1" step="any" value="${porcPadrao}" aria-label="Quantidade consumida">
       <span class="small muted">${atual.liquido?"ml":"g"}</span>
       <button class="btn sm primary" type="submit">Adicionar ao diário</button>
+      <div class="comi-dia">
+        <span class="small muted">em</span>
+        <select id="comiDia" aria-label="Dia em que comeu">${opcoesDia(alvoDia())}</select>
+        <input type="date" id="comiData" max="${hojeISO(0)}" value="${alvoDia()}" aria-label="Outra data" ${opcaoFixa(alvoDia()) ? "hidden" : ""}>
+        <input type="time" id="comiHora" aria-label="Hora" value="${alvoDia() === hojeISO(0) ? new Date().toTimeString().slice(0,5) : ""}">
+      </div>
     </form>
     ${atual.refeicao ? "" : `<div><h3 style="margin-bottom:8px">Aditivos</h3>${aditHTML}</div>`}
     <div class="tablewrap"><div class="tabela">
@@ -1375,7 +1390,14 @@ function renderResultado(){
     e.preventDefault();
     const q = num($("comiQtd").value);
     if (!q || q <= 0){ $("comiQtd").focus(); return; }
-    adicionarDiario(atual, q);
+    const dia = $("comiDia").value === "outro" ? $("comiData").value : $("comiDia").value;
+    if (!/^\d{4}-\d{2}-\d{2}$/.test(dia) || dia > hojeISO(0)){ $("comiData").hidden = false; $("comiData").focus(); setStatus("Escolha uma data até hoje.", "err"); return; }
+    adicionarDiario(atual, q, dia, $("comiHora").value);
+  };
+  $("comiDia").onchange = () => {
+    const outro = $("comiDia").value === "outro";
+    $("comiData").hidden = !outro; if (outro) $("comiData").focus();
+    if ($("comiDia").value === hojeISO(0) && !$("comiHora").value) $("comiHora").value = new Date().toTimeString().slice(0,5);
   };
 }
 
@@ -1541,22 +1563,60 @@ $("cmpClose").onclick = () => { $("cmpCard").hidden = true; };
 /* ---------- diário ---------- */
 const hojeISO = (off = 0) => { const d = new Date(); d.setDate(d.getDate() + off); return d.toLocaleDateString("sv-SE"); };
 let diaOff = 0;
-function adicionarDiario(prod, qtd){
-  const p = perfil(), dia = hojeISO(0);
+let diaAlvo = null, diaAlvoEm = 0;   // dia escolhido no diário para o próximo "Adicionar ao diário" (vale por 30 min)
+const alvoDia = () => diaAlvo && Date.now() - diaAlvoEm < 30*60e3 && diaAlvo <= hojeISO(0) ? diaAlvo : hojeISO(0);
+const offDe = iso => Math.round((new Date(iso + "T12:00:00") - new Date(hojeISO(0) + "T12:00:00")) / 864e5);
+function nomeDia(iso){
+  const off = offDe(iso);
+  if (off === 0) return "hoje";
+  if (off === -1) return "ontem";
+  return new Date(iso + "T12:00:00").toLocaleDateString("pt-BR", {weekday:"long", day:"2-digit", month:"2-digit"});
+}
+const opcaoFixa = iso => [0, -1, -2].includes(offDe(iso));
+function opcoesDia(sel){
+  const fixos = [[hojeISO(0), "Hoje"], [hojeISO(-1), "Ontem"], [hojeISO(-2), "Anteontem"]];
+  return fixos.map(([v, l]) => `<option value="${v}"${v === sel ? " selected" : ""}>${l}</option>`).join("")
+    + `<option value="outro"${opcaoFixa(sel) ? "" : " selected"}>Outro dia…</option>`;
+}
+function adicionarDiario(prod, qtd, dia = hojeISO(0), hora = ""){
+  const p = perfil();
+  if (dia === hojeISO(0) && !hora) hora = new Date().toTimeString().slice(0,5);
   diario[p.id] = diario[p.id] || {};
   diario[p.id][dia] = diario[p.id][dia] || [];
   const nova = prod.nova || (prod.ultra ? 4 : null);
-  diario[p.id][dia].push({id:uid(), nome:prod.nome, qtd, liquido:!!prod.liquido, n:{...prod.n}, hora:new Date().toTimeString().slice(0,5),
-    ...(nova ? {nova} : {}), ...(prod.refeicao && prod.parte4 != null ? {p4:Math.round(prod.parte4*100)/100} : {})});
-  salvar(); diaOff = 0; renderDiario(); registrar({evento:"diario"});
-  setStatus(`${esc(prod.nome)} adicionado ao diário de hoje de ${esc(p.nome)}. <a href="#diario">Ver diário</a>`, "ok");
+  diario[p.id][dia].push({id:uid(), nome:prod.nome, qtd, liquido:!!prod.liquido, n:{...prod.n}, hora: hora || "",
+    ...(nova ? {nova} : {}), ...(prod.refeicao && prod.parte4 != null ? {p4:Math.round(prod.parte4*100)/100} : prod.p4 != null ? {p4:prod.p4} : {})});
+  diario[p.id][dia].sort((a, b) => (a.hora || "99") < (b.hora || "99") ? -1 : (a.hora || "99") > (b.hora || "99") ? 1 : 0);
+  salvar(); diaOff = offDe(dia); renderDiario(); registrar({evento:"diario"});
+  const quando = dia === hojeISO(0) ? "de hoje" : `de ${nomeDia(dia)}`;
+  setStatus(`${esc(prod.nome)} adicionado ao diário ${esc(quando)} de ${esc(p.nome)}. <a href="#diario">Ver diário</a>`, "ok");
   $("status").scrollIntoView({block:"nearest"});
+}
+/* itens que a pessoa já comeu, para repetir com um toque */
+function recentesDoDiario(p, limite = 10){
+  const dias = Object.keys(diario[p.id] || {}).sort().reverse(), vistos = new Set(), lista = [];
+  for (const d of dias) for (const it of [...diario[p.id][d]].reverse()){
+    const k = it.nome.toLowerCase(); if (vistos.has(k)) continue;
+    vistos.add(k); lista.push(it); if (lista.length >= limite) return lista;
+  }
+  return lista;
 }
 function renderDiario(){
   const p = perfil(), m = metas(p), dia = hojeISO(diaOff);
   const itens = (diario[p.id] && diario[p.id][dia]) || [];
   const d = new Date(); d.setDate(d.getDate() + diaOff);
   $("diaNome").textContent = diaOff === 0 ? "Hoje" : diaOff === -1 ? "Ontem" : d.toLocaleDateString("pt-BR",{weekday:"long", day:"2-digit", month:"short"});
+  $("diaData").max = hojeISO(0); $("diaData").value = dia;
+  $("diaAdicionar").textContent = diaOff === 0 ? "+ Adicionar" : "+ Adicionar neste dia";
+  const rec = recentesDoDiario(p);
+  $("diaRapidoBox").hidden = !rec.length;
+  $("diaRapidoQuando").textContent = diaOff === 0 ? "hoje" : diaOff === -1 ? "ontem" : "neste dia";
+  $("diaRapido").innerHTML = rec.map((it, i) => `<button class="chip" type="button" data-rap="${i}" title="${esc(it.nome)}">+ ${esc(it.nome.length > 28 ? it.nome.slice(0, 27) + "…" : it.nome)} <span class="muted">${fmt(it.qtd,0)} ${it.liquido ? "ml" : "g"}</span></button>`).join("");
+  $("diaRapido").querySelectorAll("button[data-rap]").forEach(b => b.onclick = () => {
+    const it = rec[+b.dataset.rap];
+    adicionarDiario({nome:it.nome, liquido:it.liquido, n:it.n, nova:it.nova, p4:it.p4}, it.qtd, dia, "");
+    setStatus(`${esc(it.nome)} adicionado ao diário de ${esc(nomeDia(dia))}.`, "ok");
+  });
   $("diaPerfil").textContent = `Diário de ${p.nome}`;
   $("diaProx").disabled = diaOff >= 0;
   const tot = {}; ["kcal","prot","carb","gord","fibra","sodio","acucarAdic","gordSat"].forEach(k => tot[k] = 0);
@@ -1572,7 +1632,7 @@ function renderDiario(){
   $("diaLista").innerHTML = itens.length ? itens.map(it => {
     const kcal = num(it.n.kcal);
     return `<div class="item"><span class="small muted" style="text-align:center">${esc(it.hora)}</span><span class="nm">${esc(it.nome)} <span class="muted small">· ${fmt(it.qtd,0)} ${it.liquido?"ml":"g"}${kcal!=null?` · ${fmt(kcal*it.qtd/100,0)} kcal`:""}</span></span><button class="x" type="button" data-id="${it.id}" aria-label="Remover ${esc(it.nome)}">×</button></div>`;
-  }).join("") : `<p class="none">Nada registrado ${diaOff === 0 ? "hoje" : "neste dia"}. Analise um produto e toque em “Adicionar ao diário”.</p>`;
+  }).join("") : `<p class="none">Nada registrado ${diaOff === 0 ? "hoje" : "neste dia"}. Toque em “+ Adicionar” ou repita algo abaixo.</p>`;
   $("diaLista").querySelectorAll("button[data-id]").forEach(b => b.onclick = () => {
     diario[p.id][dia] = diario[p.id][dia].filter(x => x.id !== b.dataset.id); salvar(); renderDiario();
   });
@@ -1597,6 +1657,23 @@ function mostrarUltra(el, listas, quando){
   el.innerHTML = `<b style="color:${cor}">${fmt(u.pct,0)}% das calorias ${quando} vieram de ultraprocessados</b> (${leitura}). A diretriz brasileira de obesidade recomenda priorizar alimentos in natura e minimamente processados.${u.sem > 50 ? ` <span class="muted">${fmt(u.sem,0)} kcal sem informação de processamento ficaram fora da conta.</span>` : ""}`;
 }
 $("diaAnt").onclick = () => { diaOff--; renderDiario(); };
+$("diaEscolher").onclick = () => {
+  const inp = $("diaData"); inp.hidden = false;
+  try{ inp.showPicker(); }catch(e){ inp.focus(); }
+};
+$("diaData").onchange = () => {
+  const v = $("diaData").value;
+  if (/^\d{4}-\d{2}-\d{2}$/.test(v) && v <= hojeISO(0)){ diaOff = offDe(v); renderDiario(); }
+  $("diaData").hidden = true;
+};
+$("diaAdicionar").onclick = () => {
+  diaAlvo = hojeISO(diaOff); diaAlvoEm = Date.now();
+  location.hash = "#analisar";
+  if (atual) renderResultado();
+  setStatus(diaOff === 0 ? "Analise um produto, tire foto ou digite o que comeu e toque em “Adicionar ao diário”."
+    : `Analise um produto ou digite o que comeu: vai para o diário de <b>${esc(nomeDia(diaAlvo))}</b> (dá para mudar o dia ao lado do botão “Adicionar ao diário”).`, "ok");
+  const campo = $("textoComida"); if (campo){ campo.scrollIntoView({block:"center"}); campo.focus(); }
+};
 $("diaProx").onclick = () => { if (diaOff < 0){ diaOff++; renderDiario(); } };
 
 /* ---------- progresso ---------- */
