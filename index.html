@@ -72,12 +72,12 @@ header.top{display:flex;flex-direction:column;gap:14px;padding-top:18px}
 .bottomnav a.mais[aria-current="page"]{color:var(--accent-ink);box-shadow:0 0 0 5px var(--accent-soft),0 10px 20px rgba(217,71,43,.35)}
 /* painel inicial */
 .ola-t{font-family:var(--f-display);font-weight:800;font-size:1.8rem;letter-spacing:-.02em;line-height:1.1;margin:0}
-.periodo{display:flex;gap:22px;padding:2px 2px 0}
-.periodo button{all:unset;cursor:pointer;font:500 1.02rem var(--f-body);color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px}
-.periodo button::after{content:"";width:6px;height:6px;border-radius:50%;background:transparent}
-.periodo button[aria-pressed="true"]{color:var(--ink);font-weight:700}
-.periodo button[aria-pressed="true"]::after{background:var(--accent)}
-.periodo button:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:6px}
+.abas-per{display:flex;gap:22px;padding:2px 2px 0}
+.abas-per button{all:unset;cursor:pointer;font:500 1.02rem var(--f-body);color:var(--muted);display:flex;flex-direction:column;align-items:center;gap:4px}
+.abas-per button::after{content:"";width:6px;height:6px;border-radius:50%;background:transparent}
+.abas-per button[aria-pressed="true"]{color:var(--ink);font-weight:700}
+.abas-per button[aria-pressed="true"]::after{background:var(--accent)}
+.abas-per button:focus-visible{outline:2px solid var(--accent);outline-offset:4px;border-radius:6px}
 .dash{display:grid;grid-template-columns:1fr 1fr;gap:14px}
 .dt{background:var(--surface);border:1px solid var(--borda-card);border-radius:var(--raio);padding:16px;box-shadow:var(--sombra);display:flex;flex-direction:column;gap:10px;text-decoration:none;color:var(--ink);min-height:178px;min-width:0}
 a.dt:hover{border-color:var(--line)}
@@ -147,7 +147,7 @@ textarea{resize:vertical;min-height:64px;line-height:1.4}
 .grid3{display:grid;grid-template-columns:repeat(3,1fr);gap:10px}
 .chips{display:flex;gap:8px;flex-wrap:wrap}
 .chip{font:600 .82rem var(--f-body);border:1px solid var(--line);background:var(--surface);color:var(--ink);border-radius:999px;padding:6px 12px;cursor:pointer}
-.chip[aria-pressed="true"]{background:var(--ink);color:var(--bg);border-color:var(--ink)}
+.chip[aria-pressed="true"]{background:var(--accent);color:var(--accent-ink);border-color:var(--accent)}
 .status{font-size:.88rem;padding:10px 12px;border-radius:10px;background:var(--mid-soft)}
 .status.err{background:var(--bad-soft)}
 .status.ok{background:var(--accent-soft)}
@@ -333,7 +333,7 @@ body.bloqueado .bottomnav,body.bloqueado #tab-listas,body.bloqueado .panel,body.
   <!-- ANALISAR -->
   <section class="panel" id="view-inicio" hidden aria-labelledby="olaNome">
     <div><p class="muted small" id="olaData"></p><h2 class="ola-t" id="olaNome">Olá!</h2></div>
-    <div class="periodo" role="group" aria-label="Período do painel">
+    <div class="abas-per" role="group" aria-label="Período do painel">
       <button type="button" data-per="1" aria-pressed="true">Hoje</button>
       <button type="button" data-per="7" aria-pressed="false">Semana</button>
       <button type="button" data-per="30" aria-pressed="false">Mês</button>
@@ -3843,7 +3843,7 @@ function renderInicio(){
   const hora = new Date().getHours();
   $("olaNome").textContent = `${hora < 12 ? "Bom dia" : hora < 18 ? "Boa tarde" : "Boa noite"}, ${p.nome || "você"}!`;
   $("olaData").textContent = new Date().toLocaleDateString("pt-BR", {weekday:"long", day:"numeric", month:"long"}) + " · meta: " + ((OBJETIVOS[p.obj] || {}).label || "").toLowerCase();
-  document.querySelectorAll(".periodo button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.per === per)));
+  document.querySelectorAll(".abas-per button").forEach(b => b.setAttribute("aria-pressed", String(+b.dataset.per === per)));
 
   const pk = tot.kcal / (m.kcal || 1), pp = tot.prot / (m.prot || 1);
   const T = [];
@@ -3904,7 +3904,7 @@ function renderInicio(){
   $("dash").innerHTML = T.join("");
   $("dash").querySelectorAll("button[data-agua]").forEach(b => b.onclick = () => mudarCopos(p, +b.dataset.agua));
 }
-document.querySelectorAll(".periodo button").forEach(b => b.onclick = () => { periodoInicio = +b.dataset.per; renderInicio(); });
+document.querySelectorAll(".abas-per button").forEach(b => b.onclick = () => { periodoInicio = +b.dataset.per; renderInicio(); });
 document.querySelectorAll(".acoes-r button").forEach(b => b.onclick = () => {
   location.hash = "#analisar";
   setTimeout(() => {
