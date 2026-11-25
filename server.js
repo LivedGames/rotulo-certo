@@ -268,16 +268,18 @@ http.createServer(async (req, res) => {
     } catch { return res.status(404).end("Não encontrado"); }
   }
 
-  // apresentação para profissionais: /apresentacao e as imagens dela
-  if (url.pathname === "/apresentacao" || url.pathname === "/apresentacao/") {
+  // apresentações abertas: nutricionistas, personal trainers e público, mais as imagens delas
+  const APRESENTACOES = { "/apresentacao": "apresentacao.html", "/personal": "personal.html", "/conheca": "conheca.html" };
+  const paginaApres = APRESENTACOES[url.pathname.replace(/\/$/, "")];
+  if (paginaApres) {
     try {
-      const html = await readFile(path.join(PASTA, "apresentacao.html"));
+      const html = await readFile(path.join(PASTA, paginaApres));
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       res.setHeader("Cache-Control", "no-cache");
       return res.end(html);
     } catch { return res.status(404).end("Não encontrado"); }
   }
-  const imgApres = url.pathname.match(/^\/apresentacao\/([a-z0-9-]+)\.png$/);
+  const imgApres = url.pathname.match(/^\/apresentacao\/([a-z0-9_-]+)\.png$/);
   if (imgApres) {
     try {
       const dados = await readFile(path.join(PASTA, "apresentacao", imgApres[1] + ".png"));

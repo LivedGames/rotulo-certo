@@ -1,0 +1,217 @@
+<!doctype html>
+<html lang="pt-BR">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Rótulo Certo · Conheça o app</title>
+<meta name="description" content="Conheça o Rótulo Certo: a nota de cada alimento, feita para a sua meta.">
+<meta name="theme-color" content="#16201A">
+<link rel="icon" type="image/png" href="/favicon.png">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:wght@500;700;800&display=swap"><link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Figtree:wght@400;500;600;700&display=swap">
+<style>
+html,body{margin:0;height:100%;background:#0E1511;overflow:hidden;font-family:Figtree,Arial,sans-serif}
+#palco{position:fixed;inset:0;overflow:hidden}
+#trilho{width:1920px;height:1080px;position:absolute;left:50%;top:50%;transform-origin:center center}
+.slide{position:absolute;inset:0;width:1920px;height:1080px;box-sizing:border-box;overflow:hidden;opacity:0;visibility:hidden;transition:opacity .35s ease,visibility .35s}
+.slide.atual{opacity:1;visibility:visible}
+.slide *{margin:0;box-sizing:border-box}
+.slide ul,.slide ol{padding-left:1.2em}
+.slide a{color:inherit;text-decoration:none}
+.slide table{border-collapse:collapse;width:100%;overflow:hidden}
+.slide th,.slide td{padding:.35em .6em;border-bottom:1px solid #D9DED4;text-align:left}
+.slide th{font-weight:700}
+#barra{position:fixed;left:50%;bottom:14px;transform:translateX(-50%);display:flex;align-items:center;gap:6px;background:rgba(22,32,26,.82);backdrop-filter:blur(6px);border:1px solid rgba(243,245,239,.14);border-radius:99px;padding:5px;color:#F3F5EF;font-size:14px;transition:opacity .3s}
+#barra button{all:unset;cursor:pointer;width:38px;height:38px;border-radius:99px;display:grid;place-items:center}
+#barra button:hover,#barra button:focus-visible{background:rgba(243,245,239,.14)}
+#barra button:disabled{opacity:.35;cursor:default;background:none}
+#barra svg{width:20px;height:20px}
+#conta{min-width:58px;text-align:center;font-variant-numeric:tabular-nums}
+body.quieto #barra{opacity:0}
+#dica{display:none;position:fixed;top:16px;left:50%;transform:translateX(-50%);background:rgba(22,32,26,.85);color:#F3F5EF;font-size:14px;padding:8px 14px;border-radius:99px;white-space:nowrap}
+@media (orientation:portrait) and (max-width:700px){#dica{display:block}}
+@media (prefers-reduced-motion:reduce){.slide{transition:none}}
+</style>
+</head>
+<body>
+<main id="palco" aria-roledescription="apresentação"><div id="trilho">
+<section id="s-capa" class="slide" data-transition="fade" style="background:#16201A;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:36px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#5DBB82">Rótulo Certo</p>
+<h1 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:120px;font-weight:800;line-height:1.02;letter-spacing:-3px;color:#F3F5EF">Esse produto combina com a sua meta?</h1>
+<p style="font-size:44px;line-height:1.3;color:#CFDCD2">Aponte, fotografe ou escreva. O app responde com uma nota de 0 a 10 feita para você.</p>
+<p style="font-size:28px;color:#9AA79D">Grátis · funciona no celular e no computador</p>
+</div>
+<img src="/apresentacao/inicio.png" alt="Tela inicial do Rótulo Certo no celular, com as opções de foto do rótulo, código de barras e digitar a refeição" style="width:400px;height:800px;object-fit:cover;border:10px solid #2C3830;border-radius:48px">
+
+</section>
+<section id="s-problema" class="slide" data-transition="fade" style="background:#2C7A4B;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:column;justify-content:center;gap:40px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#D7EEDD">Sabe aquela dúvida?</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:96px;font-weight:700;line-height:1.1;color:#F3F5EF">Você lê o rótulo inteiro e continua sem saber se pode comer.</h2>
+<p style="font-size:36px;line-height:1.4;color:#E3F1E7">Tabela por porção, nomes técnicos e letra pequena. E o que é bom para uma pessoa pode não ser para você.</p>
+
+</section>
+<section id="s-comofunciona" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">Como funciona</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">Três jeitos de perguntar</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:20px">
+<div style="display:flex;flex-direction:row;gap:28px;align-items:start;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:32px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:48px;height:48px"><circle cx="11" cy="11" r="8"/><path d="m21 21-4.3-4.3"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Código de barras</h3><p style="font-size:28px;line-height:1.4;color:#4E5A51">Aponte a câmera para o produto no mercado.</p></div>
+</div>
+<div style="display:flex;flex-direction:row;gap:28px;align-items:start;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:32px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:48px;height:48px"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Foto do rótulo</h3><p style="font-size:28px;line-height:1.4;color:#4E5A51">Tire foto ou escolha da galeria; a IA lê para você.</p></div>
+</div>
+<div style="display:flex;flex-direction:row;gap:28px;align-items:start;background:#FFFFFF;border:1px solid #D9DED4;border-radius:20px;padding:32px">
+<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#2C7A4B;width:48px;height:48px"><path d="M7.9 20A9 9 0 1 0 4 16.1L2 22Z"/></svg>
+<div style="flex:1;display:flex;flex-direction:column;gap:8px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Escreva o que comeu</h3><p style="font-size:28px;line-height:1.4;color:#4E5A51">“1 concha de feijão, arroz e um bife”: o app entende.</p></div>
+</div>
+</div>
+</div>
+<img src="/apresentacao/refeicao.png" alt="Resultado do app para uma refeição de feijão, arroz, fígado e alface: nota 10 para emagrecer, com os ingredientes e gramas" style="width:400px;height:800px;object-fit:cover;border:10px solid #16201A;border-radius:48px">
+
+</section>
+<section id="s-nota" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px 128px 160px;display:flex;flex-direction:column;gap:48px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">A nota é sua</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">O mesmo produto, notas diferentes</h2>
+</div>
+<div style="display:flex;flex-direction:row;gap:64px;align-items:start">
+<div style="flex:1;display:flex;flex-direction:column">
+<table style="font-family:'Figtree', Arial, sans-serif;font-size:32px;color:#16201A;background:#FFFFFF;border-radius:16px">
+<tr style="background:#E2F0E6"><th style="width:56%;text-align:left">Alimento</th><th style="width:22%;text-align:right">Ganhar massa</th><th style="width:22%;text-align:right">Emagrecer</th></tr>
+<tr><td>Shake de leite, banana, aveia e whey</td><td style="text-align:right">7,5</td><td style="text-align:right">8,5</td></tr>
+<tr><td>Peito de peru fatiado</td><td style="text-align:right">4</td><td style="text-align:right">4,5</td></tr>
+<tr><td>Refrigerante de cola</td><td style="text-align:right">1</td><td style="text-align:right">0</td></tr>
+<tr><td>Iogurte proteico natural</td><td style="text-align:right">10</td><td style="text-align:right">10</td></tr>
+</table>
+</div>
+<div style="width:520px;display:flex;flex-direction:column;gap:24px;background:#16201A;border-radius:24px;padding:48px">
+<h3 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:40px;font-weight:700;color:#F3F5EF">Ela também explica</h3>
+<p style="font-size:30px;line-height:1.4;color:#CFDCD2">Pontos positivos, pontos de atenção, selos “Alto em” da Anvisa e aditivos de risco, em linguagem simples.</p>
+</div>
+</div>
+<p style="position:absolute;left:128px;bottom:64px;width:1664px;font-size:24px;color:#5D6A60">Notas calculadas pelo app com um perfil de exemplo: 28 anos, 75 kg, 1,78 m, atividade moderada.</p>
+
+</section>
+<section id="s-alergias" class="slide" data-transition="fade" style="background:#16201A;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<img src="/apresentacao/alergia.png" alt="Resultado do app para biscoito recheado num perfil alérgico a soja: nota 0 e alerta vermelho Alergia: contém soja" style="width:400px;height:800px;object-fit:cover;border:10px solid #2C3830;border-radius:48px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#5DBB82">Alergias e restrições</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#F3F5EF">O alerta aparece antes de você comprar</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:28px">
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#F07A63;width:44px;height:44px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#CFDCD2"><b style="color:#F3F5EF">Contém o que você não pode:</b> nota 0 e aviso vermelho no topo.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#E0A64A;width:44px;height:44px"><path d="m21.73 18-8-14a2 2 0 0 0-3.48 0l-8 14A2 2 0 0 0 4 21h16a2 2 0 0 0 1.73-3Z"/><path d="M12 9v4"/><path d="M12 17h.01"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#CFDCD2"><b style="color:#F3F5EF">Pode conter traços:</b> nota baixa e aviso amarelo.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#5DBB82;width:44px;height:44px"><path d="M20 6 9 17l-5-5"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#CFDCD2"><b style="color:#F3F5EF">Qualquer alergia:</b> leite, glúten, amendoim e até as que você digitar, como morango.</p></div>
+</div>
+</div>
+
+</section>
+<section id="s-diario" class="slide" data-transition="fade" style="background:#E2F0E6;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#1F5C38">Diário</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">Anotar o que comeu leva segundos</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#1F5C38;width:44px;height:44px"><path d="M20 6 9 17l-5-5"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#33403A"><b style="color:#16201A">Por refeição:</b> café, almoço, lanche, jantar e ceia.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#1F5C38;width:44px;height:44px"><circle cx="12" cy="12" r="10"/><path d="M12 6v6l4 2"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#33403A"><b style="color:#16201A">Esqueceu ontem?</b> Escolha o dia e complete depois.</p></div>
+<div style="display:flex;flex-direction:row;gap:24px;align-items:start"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true" style="flex:none;color:#1F5C38;width:44px;height:44px"><path d="M15 14c.2-1 .7-1.7 1.5-2.5 1-.9 1.5-2.2 1.5-3.5A6 6 0 0 0 6 8c0 1 .2 2.2 1.5 3.5.7.7 1.3 1.5 1.5 2.5"/><path d="M9 18h6"/><path d="M10 22h4"/></svg><p style="flex:1;font-size:32px;line-height:1.4;color:#33403A"><b style="color:#16201A">Um toque para repetir</b> o que você come sempre.</p></div>
+</div>
+</div>
+<img src="/apresentacao/diario.png" alt="Diário do app com as refeições do dia separadas em café, almoço e lanche, e atalhos para repetir alimentos" style="width:400px;height:800px;object-fit:cover;border:10px solid #16201A;border-radius:48px">
+
+</section>
+<section id="s-evolucao" class="slide" data-transition="fade" style="background:#F3F5EF;color:#16201A;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<img src="/apresentacao/metapeso.png" alt="Tela de progresso com o peso inicial, o atual, a barra de perda chegando a 7,4% de uma meta de 10% e o gráfico de peso" style="width:400px;height:800px;object-fit:cover;border:10px solid #16201A;border-radius:48px">
+<div style="flex:1;display:flex;flex-direction:column;gap:40px">
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#2C7A4B">Progresso</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:72px;font-weight:700;line-height:1.1;color:#16201A">Veja sua evolução em 7, 15 e 30 dias</h2>
+</div>
+<div style="display:flex;flex-direction:column;gap:32px">
+<div style="display:flex;flex-direction:column;gap:8px;border-left:4px solid #2C7A4B;padding:0 0 0 28px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Metas que fazem sentido</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Calculadas pelo seu corpo e objetivo, com limites seguros.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;border-left:4px solid #2C7A4B;padding:0 0 0 28px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Peso em gráfico</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Quanto já perdeu ou ganhou, e quanto falta.</p></div>
+<div style="display:flex;flex-direction:column;gap:8px;border-left:4px solid #2C7A4B;padding:0 0 0 28px"><h3 style="font-size:36px;font-weight:700;color:#16201A">Para a família toda</h3><p style="font-size:30px;line-height:1.4;color:#4E5A51">Um perfil para cada pessoa da casa.</p></div>
+</div>
+</div>
+
+</section>
+<section id="s-comece" class="slide" data-transition="fade" style="background:#16201A;color:#F3F5EF;font-family:'Figtree', Arial, sans-serif;padding:128px;display:flex;flex-direction:row;align-items:center;gap:96px">
+<div style="flex:1;display:flex;flex-direction:column;gap:44px">
+<p style="font-size:28px;font-weight:700;letter-spacing:3px;text-transform:uppercase;color:#5DBB82">Comece agora</p>
+<h2 style="font-family:'Bricolage Grotesque', Arial, sans-serif;font-size:96px;font-weight:800;line-height:1.05;letter-spacing:-2px;color:#F3F5EF">É grátis e leva um minuto</h2>
+<div style="display:flex;flex-direction:column;gap:20px">
+<p style="font-size:36px;line-height:1.35;color:#CFDCD2"><b style="color:#5DBB82">1.</b> Aponte a câmera para o QR code</p>
+<p style="font-size:36px;line-height:1.35;color:#CFDCD2"><b style="color:#5DBB82">2.</b> Crie sua conta com e-mail ou Google</p>
+<p style="font-size:36px;line-height:1.35;color:#CFDCD2"><b style="color:#5DBB82">3.</b> Escolha sua meta e leia o primeiro produto</p>
+</div>
+<p style="font-size:28px;color:#9AA79D">rotulo-certo-production.up.railway.app</p>
+</div>
+<div style="display:flex;flex-direction:column;align-items:center;gap:20px;background:#F3F5EF;border-radius:32px;padding:40px">
+<img src="/apresentacao/qr_publico.png" alt="QR code que abre o Rótulo Certo" style="width:440px;height:440px;object-fit:contain">
+<p style="font-size:28px;font-weight:600;color:#16201A">Abra no celular</p>
+</div>
+
+</section>
+</div></main>
+<p id="dica">Vire o celular para ver maior</p>
+<nav id="barra" aria-label="Navegação dos slides">
+  <button id="ant" type="button" aria-label="Slide anterior"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m15 18-6-6 6-6"/></svg></button>
+  <span id="conta" aria-live="polite"></span>
+  <button id="prox" type="button" aria-label="Próximo slide"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="m9 18 6-6-6-6"/></svg></button>
+  <button id="tela" type="button" aria-label="Tela cheia"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 3H5a2 2 0 0 0-2 2v3M21 8V5a2 2 0 0 0-2-2h-3M3 16v3a2 2 0 0 0 2 2h3M16 21h3a2 2 0 0 0 2-2v-3"/></svg></button>
+</nav>
+<script>
+(() => {
+  const S = [...document.querySelectorAll(".slide")], trilho = document.getElementById("trilho");
+  let i = 0, maior = 0, fimContado = false;
+  const origem = (() => { try { const u = new URL(location.href), o = u.searchParams.get("o") || u.searchParams.get("utm_source"); if (o) return o;
+    if (/Instagram/.test(navigator.userAgent)) return "instagram"; const r = document.referrer ? new URL(document.referrer).hostname : "";
+    return !r || r === location.hostname ? "direto" : r.replace(/^(www|l|m|lm)\./, "").split(".")[0]; } catch (e) { return null; } })();
+  function registrar(d){ try { const b = JSON.stringify({...d, origem}); if (!(navigator.sendBeacon && navigator.sendBeacon("/api/visita", new Blob([b], {type:"application/json"})))) fetch("/api/visita", {method:"POST", body:b, headers:{"Content-Type":"application/json"}, keepalive:true}).catch(() => {}); } catch (e) {} }
+  registrar({pagina:"conheca"});
+  addEventListener("visibilitychange", () => { if (document.visibilityState === "hidden") registrar({evento:"slides", valor:maior + 1}); });
+  const ler = () => { const n = parseInt(location.hash.slice(1), 10); return n >= 1 && n <= S.length ? n - 1 : 0; };
+  function ir(n, hist){
+    i = Math.max(0, Math.min(S.length - 1, n));
+    S.forEach((s, k) => { s.classList.toggle("atual", k === i); s.setAttribute("aria-hidden", k !== i); });
+    document.getElementById("conta").textContent = (i + 1) + " / " + S.length;
+    maior = Math.max(maior, i);
+    if (i === S.length - 1 && !fimContado){ fimContado = true; registrar({evento:"apresentacao_fim"}); }
+    document.getElementById("ant").disabled = i === 0;
+    document.getElementById("prox").disabled = i === S.length - 1;
+    if (hist !== false) history.replaceState(null, "", "#" + (i + 1));
+  }
+  function escala(){ const k = Math.min(innerWidth / 1920, innerHeight / 1080); trilho.style.transform = "translate(-50%,-50%) scale(" + k + ")"; }
+  addEventListener("resize", escala); escala();
+  addEventListener("hashchange", () => ir(ler(), false));
+  document.getElementById("ant").onclick = () => ir(i - 1);
+  document.getElementById("prox").onclick = () => ir(i + 1);
+  document.getElementById("tela").onclick = () => { try { document.fullscreenElement ? document.exitFullscreen() : document.documentElement.requestFullscreen(); } catch (e) {} };
+  addEventListener("keydown", e => {
+    if (["ArrowRight","PageDown"," ","Enter"].includes(e.key)) { e.preventDefault(); ir(i + 1); }
+    else if (["ArrowLeft","PageUp","Backspace"].includes(e.key)) { e.preventDefault(); ir(i - 1); }
+    else if (e.key === "Home") ir(0); else if (e.key === "End") ir(S.length - 1);
+    else if (e.key === "f" || e.key === "F") document.getElementById("tela").click();
+  });
+  let x0 = null, y0 = null;
+  addEventListener("touchstart", e => { x0 = e.touches[0].clientX; y0 = e.touches[0].clientY; }, {passive:true});
+  addEventListener("touchend", e => {
+    if (x0 == null) return; const dx = e.changedTouches[0].clientX - x0, dy = e.changedTouches[0].clientY - y0; x0 = null;
+    if (Math.abs(dx) > 40 && Math.abs(dx) > Math.abs(dy)) ir(i + (dx < 0 ? 1 : -1));
+  });
+  document.getElementById("palco").addEventListener("click", e => { if (!e.target.closest("a")) ir(i + (e.clientX > innerWidth / 3 ? 1 : -1)); });
+  let t; const mexeu = () => { document.body.classList.remove("quieto"); clearTimeout(t); t = setTimeout(() => document.body.classList.add("quieto"), 2500); };
+  addEventListener("mousemove", mexeu); addEventListener("touchstart", mexeu, {passive:true}); mexeu();
+  ir(ler(), false);
+})();
+</script>
+</body>
+</html>

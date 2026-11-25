@@ -1,6 +1,6 @@
 // Rótulo Certo — service worker: deixa o app abrir sem internet.
 // Ao publicar uma versão nova do app, aumente o número abaixo.
-const VERSAO = "rotulo-certo-v2";
+const VERSAO = "rotulo-certo-v3";
 const ESSENCIAIS = ["/", "/manifest.webmanifest", "/icon-192.png", "/icon-512.png", "/icon-maskable-512.png", "/favicon.png"];
 const EXTERNOS = ["https://unpkg.com/html5-qrcode@2.3.8/html5-qrcode.min.js"];
 
